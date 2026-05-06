@@ -78,6 +78,26 @@ const demoKnowledgePoint = {
   status: "published"
 };
 
+const demoKnowledgeDetail = {
+  ...demoKnowledgePoint,
+  curriculum_concept: "力与运动",
+  diagram_steps: ["观察物体速度方向", "找到引力或拉力方向", "判断速度与力如何共同改变运动"],
+  common_misunderstandings: ["轨道稳定不是没有受力，而是持续受力并改变方向。"],
+  examples: ["调节探测器推力，让它绕恒星稳定运动。"],
+  ai_science_extension: "可以用 AI 或编程做一个简单模拟，观察速度变大或变小时轨道如何变化。",
+  video: {
+    title: "看懂速度和力如何形成轨道",
+    url: "https://www.bilibili.com/",
+    duration: "3 分钟",
+    provider: "示例视频"
+  },
+  tasks: [
+    "用一句话解释什么是稳定轨道。",
+    "画出速度方向和引力方向。",
+    "说出速度太小或太大时会发生什么。"
+  ]
+};
+
 const demoGame = {
   id: "demo-game-pingpong",
   name: "乒乓球冠军赛",
@@ -340,6 +360,65 @@ function gradeBandOf(metadata: Record<string, unknown>) {
 
 function whyItMattersOf(metadata: Record<string, unknown>) {
   return typeof metadata.why_it_matters === "string" ? metadata.why_it_matters : "这条前沿内容可以帮助你把课内知识和真实世界的新变化联系起来。";
+}
+
+function arrayOfStrings(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
+}
+
+function knowledgeMetadata(point: { metadata?: unknown } | { plain_explanation?: string | null }) {
+  if ("metadata" in point) return metadataOf(point.metadata);
+  return {};
+}
+
+function knowledgePointSummary(point: {
+  id: string;
+  name: string;
+  slug: string;
+  school_stage: string;
+  grade: number | null;
+  subject: string;
+  difficulty: string;
+  curriculum_concept: string | null;
+  plain_explanation: string | null;
+  recommended_minutes: number | null;
+  metadata?: unknown;
+}) {
+  const metadata = knowledgeMetadata(point);
+  return {
+    id: point.id,
+    name: point.name,
+    slug: point.slug,
+    school_stage: point.school_stage,
+    grade: point.grade,
+    subject: point.subject,
+    difficulty: point.difficulty,
+    curriculum_concept: point.curriculum_concept,
+    plain_explanation: point.plain_explanation,
+    recommended_minutes: point.recommended_minutes,
+    age_group: typeof metadata.age_group === "string" ? metadata.age_group : point.grade && point.grade <= 6 ? "age-10-12" : "age-12-13",
+    textbook: typeof metadata.textbook === "string" ? metadata.textbook : point.subject === "math" ? "北师大版" : "人教社体系",
+    video: metadata.video,
+    href: `./knowledge.html?point=${point.slug}`
+  };
+}
+
+function knowledgePointDetail(point: Parameters<typeof knowledgePointSummary>[0] & {
+  diagram_steps: unknown;
+  common_misunderstandings: unknown;
+  examples: unknown;
+  ai_science_extension: string | null;
+}) {
+  const metadata = knowledgeMetadata(point);
+  return {
+    ...knowledgePointSummary(point),
+    diagram_steps: arrayOfStrings(point.diagram_steps),
+    common_misunderstandings: arrayOfStrings(point.common_misunderstandings),
+    examples: arrayOfStrings(point.examples),
+    ai_science_extension: point.ai_science_extension,
+    video: typeof metadata.video === "object" && metadata.video ? metadata.video : demoKnowledgeDetail.video,
+    tasks: arrayOfStrings(metadata.tasks).length ? arrayOfStrings(metadata.tasks) : demoKnowledgeDetail.tasks
+  };
 }
 
 function frontierItemFromContent(item: {
@@ -899,6 +978,8 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/health", description: "健康检查" },
       { method: "GET", path: "/api/contents", description: "已发布内容列表" },
       { method: "GET", path: "/api/knowledge-points", description: "已发布知识点列表" },
+      { method: "GET", path: "/api/knowledge-points/:id", description: "知识点详情" },
+      { method: "POST", path: "/api/knowledge-points/:id/progress", description: "保存当前用户知识点学习进度" },
       { method: "GET", path: "/api/games", description: "已发布小游戏列表" },
       { method: "GET", path: "/api/home/summary", description: "首页运营位摘要" },
       { method: "GET", path: "/api/users/me/growth", description: "当前用户学习成长汇总" },
@@ -1780,10 +1861,135 @@ app.get("/api/knowledge-points", async (req, res, next) => {
       skip: query.offset
     });
 
-    res.json(jsonSafe({ data: knowledgePoints }));
+    res.json(jsonSafe({
+      data: knowledgePoints.length ? knowledgePoints.map(knowledgePointSummary) : [knowledgePointSummary(demoKnowledgeDetail)],
+      mode: knowledgePoints.length ? "live" : "demo"
+    }));
   } catch (error) {
     if (isDatabaseConnectionError(error)) {
-      res.json({ data: [demoKnowledgePoint], mode: "demo", warning: "database_unavailable" });
+      res.json({ data: [knowledgePointSummary(demoKnowledgeDetail)], mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/knowledge-points/:id", async (req, res, next) => {
+  try {
+    const params = z.object({ id: z.string() }).parse(req.params);
+    const point = await prisma.knowledgePoint.findFirst({
+      where: {
+        OR: [
+          z.string().uuid().safeParse(params.id).success ? { id: params.id } : undefined,
+          { slug: params.id }
+        ].filter(Boolean) as Array<{ id?: string; slug?: string }>,
+        status: "published",
+        deleted_at: null
+      }
+    });
+
+    if (!point) {
+      if (params.id === demoKnowledgeDetail.slug || params.id === demoKnowledgeDetail.id) {
+        res.json({ data: demoKnowledgeDetail, mode: "demo" });
+        return;
+      }
+
+      res.status(404).json({ error: "not_found", message: "未找到这个知识点" });
+      return;
+    }
+
+    res.json(jsonSafe({ data: knowledgePointDetail(point), mode: "live" }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.json({ data: demoKnowledgeDetail, mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.post("/api/knowledge-points/:id/progress", async (req, res, next) => {
+  try {
+    const currentUser = await findCurrentUser(req);
+    if (!currentUser) {
+      res.status(401).json({ error: "unauthorized", message: "登录后才能保存知识点进度" });
+      return;
+    }
+
+    const params = z.object({ id: z.string() }).parse(req.params);
+    const body = z
+      .object({
+        status: z.enum(["not_started", "learning", "completed", "mastered"]).default("completed"),
+        progress_percent: z.coerce.number().int().min(0).max(100).default(100),
+        mastery_score: z.coerce.number().min(0).max(100).optional()
+      })
+      .parse(req.body);
+
+    const point = await prisma.knowledgePoint.findFirst({
+      where: {
+        OR: [
+          z.string().uuid().safeParse(params.id).success ? { id: params.id } : undefined,
+          { slug: params.id }
+        ].filter(Boolean) as Array<{ id?: string; slug?: string }>,
+        status: "published",
+        deleted_at: null
+      }
+    });
+
+    if (!point) {
+      res.status(404).json({ error: "not_found", message: "未找到这个知识点" });
+      return;
+    }
+
+    const now = new Date();
+    const progress = await prisma.learningProgress.upsert({
+      where: {
+        user_id_knowledge_point_id: {
+          user_id: currentUser.id,
+          knowledge_point_id: point.id
+        }
+      },
+      update: {
+        status: body.status,
+        progress_percent: body.progress_percent,
+        mastery_score: body.mastery_score,
+        last_activity_at: now,
+        completed_at: ["completed", "mastered"].includes(body.status) ? now : null,
+        source_type: "knowledge_point",
+        source_id: point.id
+      },
+      create: {
+        user_id: currentUser.id,
+        knowledge_point_id: point.id,
+        status: body.status,
+        progress_percent: body.progress_percent,
+        mastery_score: body.mastery_score,
+        last_activity_at: now,
+        completed_at: ["completed", "mastered"].includes(body.status) ? now : undefined,
+        source_type: "knowledge_point",
+        source_id: point.id
+      }
+    });
+
+    if (body.status === "mastered") {
+      await awardBadge(currentUser.id, "knowledge-master", {
+        name: "知识点掌握者",
+        description: "掌握了一个重点知识点。"
+      }, {
+        source_type: "knowledge_point",
+        source_id: point.id
+      });
+    }
+
+    res.json(jsonSafe({ data: progress }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({
+        error: "database_unavailable",
+        message: "保存知识点进度需要先启动 PostgreSQL 并执行 Prisma 迁移。"
+      });
       return;
     }
 

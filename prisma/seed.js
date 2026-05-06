@@ -120,6 +120,174 @@ async function main() {
     }
   });
 
+  const knowledgeSeeds = [
+    {
+      name: "圆的周长和面积",
+      slug: "grade6-circle-perimeter-area",
+      school_stage: "primary",
+      grade: 6,
+      subject: "math",
+      difficulty: "normal",
+      curriculum_concept: "圆",
+      plain_explanation: "圆可以用半径和直径描述大小，周长表示绕圆一圈的长度，面积表示圆内部占据的平面大小。",
+      diagram_steps: ["找到圆心、半径和直径", "用直径理解周长公式", "把圆近似剪拼成长方形理解面积"],
+      common_misunderstandings: ["半径和直径容易混用。", "周长和面积单位不同，不能直接比较。"],
+      examples: ["计算操场圆形花坛的围栏长度。", "估算圆形桌布需要多少布料。"],
+      ai_science_extension: "可以让 AI 帮你生成不同半径的圆，并比较周长和面积增长速度。",
+      recommended_minutes: 15,
+      metadata: {
+        age_group: "age-10-12",
+        textbook: "北师大版六年级数学",
+        video: { title: "圆为什么能剪拼出面积公式", url: "https://www.bilibili.com/", duration: "3 分钟", provider: "示例视频" },
+        tasks: ["说出半径和直径的关系。", "计算半径 3cm 的圆周长。", "解释圆面积公式从哪里来。"]
+      }
+    },
+    {
+      name: "百分数与生活应用",
+      slug: "grade6-percent-application",
+      school_stage: "primary",
+      grade: 6,
+      subject: "math",
+      difficulty: "normal",
+      curriculum_concept: "百分数",
+      plain_explanation: "百分数表示一个量是另一个量的百分之几，常用来描述折扣、增长率、命中率和完成率。",
+      diagram_steps: ["找单位 1", "把百分数转化成分数或小数", "根据题意列式计算"],
+      common_misunderstandings: ["不知道谁是单位 1。", "把增加百分之几和增加到百分之几混淆。"],
+      examples: ["商品八折后的价格。", "班级投篮命中率。"],
+      ai_science_extension: "可以把新闻里的百分比数据做成图表，训练数据解读能力。",
+      recommended_minutes: 14,
+      metadata: {
+        age_group: "age-10-12",
+        textbook: "北师大版六年级数学",
+        video: { title: "折扣和增长率怎么理解", url: "https://www.bilibili.com/", duration: "2 分钟", provider: "示例视频" },
+        tasks: ["找出一道题里的单位 1。", "计算 120 元打八折后的价格。", "用一句话解释增长率。"]
+      }
+    },
+    {
+      name: "科学探究与变量控制",
+      slug: "grade6-science-control-variable",
+      school_stage: "primary",
+      grade: 6,
+      subject: "science",
+      difficulty: "easy",
+      curriculum_concept: "科学探究",
+      plain_explanation: "做实验时一次只改变一个条件，其他条件保持相同，才能判断这个条件是否真的影响结果。",
+      diagram_steps: ["提出问题", "确定要改变的变量", "保持其他条件相同", "记录并比较结果"],
+      common_misunderstandings: ["一次改变太多条件，导致不知道哪个条件起作用。"],
+      examples: ["比较不同光照对植物生长的影响。"],
+      ai_science_extension: "可以让 AI 帮你检查实验设计里有没有没有控制好的变量。",
+      recommended_minutes: 12,
+      metadata: {
+        age_group: "age-10-12",
+        textbook: "人教社科学体系",
+        video: { title: "什么叫控制变量", url: "https://www.bilibili.com/", duration: "2 分钟", provider: "示例视频" },
+        tasks: ["写出一个实验问题。", "指出实验中的自变量和因变量。", "说出至少两个需要保持不变的条件。"]
+      }
+    },
+    {
+      name: "有理数与数轴",
+      slug: "grade7-rational-number-line",
+      school_stage: "middle",
+      grade: 7,
+      subject: "math",
+      difficulty: "normal",
+      curriculum_concept: "有理数",
+      plain_explanation: "有理数包括正数、负数和 0。数轴可以把数的位置、大小、相反数和绝对值直观表示出来。",
+      diagram_steps: ["画出 0 点", "确定正方向和单位长度", "标出正数和负数", "比较离 0 的距离"],
+      common_misunderstandings: ["负数越靠左越小。", "绝对值表示到 0 的距离，不带正负方向。"],
+      examples: ["用海拔、温度和收支理解正负数。"],
+      ai_science_extension: "可以让 AI 生成生活中的正负数例子，并在数轴上标出来。",
+      recommended_minutes: 15,
+      metadata: {
+        age_group: "age-12-13",
+        textbook: "北师大版七年级数学",
+        video: { title: "负数为什么在 0 的左边", url: "https://www.bilibili.com/", duration: "3 分钟", provider: "示例视频" },
+        tasks: ["在数轴上标出 -3、0、2。", "说出 -5 的相反数。", "解释绝对值的意义。"]
+      }
+    },
+    {
+      name: "一元一次方程",
+      slug: "grade7-linear-equation",
+      school_stage: "middle",
+      grade: 7,
+      subject: "math",
+      difficulty: "normal",
+      curriculum_concept: "方程思想",
+      plain_explanation: "一元一次方程用一个未知数表示问题中的数量关系，解方程就是找到让等式成立的数。",
+      diagram_steps: ["设未知数", "根据等量关系列方程", "用等式性质变形", "检验答案是否符合题意"],
+      common_misunderstandings: ["移项时忘记变号。", "只会算式，不会从文字题找等量关系。"],
+      examples: ["用方程解决买票、路程和年龄问题。"],
+      ai_science_extension: "可以让 AI 把应用题拆成等量关系，再自己列方程验证。",
+      recommended_minutes: 18,
+      metadata: {
+        age_group: "age-12-13",
+        textbook: "北师大版七年级数学",
+        video: { title: "怎样从应用题列出方程", url: "https://www.bilibili.com/", duration: "4 分钟", provider: "示例视频" },
+        tasks: ["写出一个未知数 x 表示什么。", "找出题目里的等量关系。", "解一个简单一元一次方程。"]
+      }
+    },
+    {
+      name: "显微观察与生命结构",
+      slug: "grade7-science-microscope-life",
+      school_stage: "middle",
+      grade: 7,
+      subject: "science",
+      difficulty: "normal",
+      curriculum_concept: "生命系统",
+      plain_explanation: "显微镜帮助我们看到肉眼看不见的细胞结构。生命体可以从细胞、组织、器官到系统逐层理解。",
+      diagram_steps: ["认识显微镜结构", "低倍镜找到目标", "调节焦距看清细胞", "记录观察结果"],
+      common_misunderstandings: ["显微镜倍率越高越容易找目标，其实通常先用低倍镜。"],
+      examples: ["观察洋葱表皮细胞。"],
+      ai_science_extension: "可以用 AI 对照显微图片，练习标注细胞壁、细胞核等结构。",
+      recommended_minutes: 16,
+      metadata: {
+        age_group: "age-12-13",
+        textbook: "人教社科学体系",
+        video: { title: "第一次使用显微镜", url: "https://www.bilibili.com/", duration: "3 分钟", provider: "示例视频" },
+        tasks: ["说出显微镜的两个主要部件。", "解释为什么先用低倍镜。", "画出观察到的细胞结构。"]
+      }
+    }
+  ];
+
+  for (const item of knowledgeSeeds) {
+    await prisma.knowledgePoint.upsert({
+      where: { slug: item.slug },
+      update: {
+        name: item.name,
+        school_stage: item.school_stage,
+        grade: item.grade,
+        subject: item.subject,
+        difficulty: item.difficulty,
+        curriculum_concept: item.curriculum_concept,
+        plain_explanation: item.plain_explanation,
+        diagram_steps: item.diagram_steps,
+        common_misunderstandings: item.common_misunderstandings,
+        examples: item.examples,
+        ai_science_extension: item.ai_science_extension,
+        recommended_minutes: item.recommended_minutes,
+        metadata: item.metadata,
+        status: "published"
+      },
+      create: {
+        name: item.name,
+        slug: item.slug,
+        school_stage: item.school_stage,
+        grade: item.grade,
+        subject: item.subject,
+        difficulty: item.difficulty,
+        curriculum_concept: item.curriculum_concept,
+        plain_explanation: item.plain_explanation,
+        diagram_steps: item.diagram_steps,
+        common_misunderstandings: item.common_misunderstandings,
+        examples: item.examples,
+        ai_science_extension: item.ai_science_extension,
+        recommended_minutes: item.recommended_minutes,
+        metadata: item.metadata,
+        status: "published"
+      }
+    });
+  }
+
   const frontierSeeds = [
     {
       slug: "frontier-multimodal-ai",

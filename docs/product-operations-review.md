@@ -23,7 +23,7 @@
 | 用户资料浮窗 | 首页右上角 | `/api/auth/me` | 局部接入 | 当前只展示注册信息和静态标签，尚未接入真实兴趣、学习行为和徽章 |
 | 今日前沿 | `frontier.html` + `frontier.js` | `/api/frontier/summary`、`/api/frontier/items`、`/api/frontier/today-news`、`/api/frontier/items/:id` | 已完成动态化第一版 | 已能从后端读取列表和当天新闻，下一步接自动抓取与审核流 |
 | 开源项目 | `projects.html` + `projects.js` | `/api/projects/rankings/current`、`/api/projects/rankings`、`/api/projects/:id` | 已完成动态化第一版 | 已能读取当前周榜、历史榜单和项目详情，下一步接 GitHub 自动抓取 |
-| 中小学知识 | `knowledge.html` | `/api/knowledge-points` | 页面未充分接入 | 内容结构已搭好，但缺详情页、视频、学习进度和知识点完成记录 |
+| 中小学知识 | `knowledge.html` + `knowledge.js` | `/api/knowledge-points`、`/api/knowledge-points/:id`、`/api/knowledge-points/:id/progress` | 已完成动态化第一版 | 已有详情、视频、任务和学习进度，下一步扩充题库和真实视频源 |
 | AI 学习 | `ai-learning.html` | 已接入书籍、章节、任务和阅读进度接口 | 静态 PDF + 导读 + 进度 | 适合做首个高质量内容产品，后续可扩展更多书籍和徽章 |
 | Hermes 对话 | `hermes.html` + `hermes.js` | `/api/hermes/status`、`/api/hermes/chat` | 已接入 | 本机能力已跑通，可作为特色功能，但需要安全边界和使用提示 |
 | 奥林匹克小游戏 | `games.html` + 游戏目录 | `/api/games`、`/api/game-records`、`/api/users/me/growth` | 已完成成绩记录第一版 | 游戏完成可写入成绩并触发学习天数、知识点和徽章，下一步做排行榜 |
@@ -258,7 +258,7 @@ AI 生成介绍、学习价值、改造任务
 ### P2：提升留存和个性化
 
 - 根据年级、兴趣、学习行为生成推荐。
-- 增加知识点详情页和学习任务页。
+- 已完成第一版：增加知识点详情、视频、学习任务和进度保存。
 - 建立徽章规则，例如“连续 3 天学习”“完成 5 个知识点”“赢得乒乓球冠军赛”。
 - 增加内容收藏、继续学习、最近学习记录。
 - 增加运营后台首页看板。

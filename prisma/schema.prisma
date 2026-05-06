@@ -398,6 +398,7 @@ model KnowledgePoint {
   examples                   Json?
   ai_science_extension       String?
   recommended_minutes        Int?
+  metadata                   Json?
   status                     PublishStatus @default(draft)
   created_by_id              String?       @db.Uuid
   created_at                 DateTime      @default(now()) @db.Timestamptz(6)
