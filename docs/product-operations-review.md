@@ -24,9 +24,9 @@
 | 今日前沿 | `frontier.html` + `frontier.js` | `/api/frontier/summary`、`/api/frontier/items`、`/api/frontier/today-news`、`/api/frontier/items/:id` | 已完成动态化第一版 | 已能从后端读取列表和当天新闻，下一步接自动抓取与审核流 |
 | 开源项目 | `projects.html` + `projects.js` | `/api/projects/rankings/current`、`/api/projects/rankings`、`/api/projects/:id` | 已完成动态化第一版 | 已能读取当前周榜、历史榜单和项目详情，下一步接 GitHub 自动抓取 |
 | 中小学知识 | `knowledge.html` | `/api/knowledge-points` | 页面未充分接入 | 内容结构已搭好，但缺详情页、视频、学习进度和知识点完成记录 |
-| AI 学习 | `ai-learning.html` | 需求中规划了书籍表，接口未落地 | 静态 PDF + 导读 | 适合做首个高质量内容产品，但需要章节、阅读进度、任务完成 |
+| AI 学习 | `ai-learning.html` | 已接入书籍、章节、任务和阅读进度接口 | 静态 PDF + 导读 + 进度 | 适合做首个高质量内容产品，后续可扩展更多书籍和徽章 |
 | Hermes 对话 | `hermes.html` + `hermes.js` | `/api/hermes/status`、`/api/hermes/chat` | 已接入 | 本机能力已跑通，可作为特色功能，但需要安全边界和使用提示 |
-| 奥林匹克小游戏 | `games.html` + 游戏目录 | `/api/games`、`/api/game-records` | 列表静态，记录接口未接入游戏 | 游戏体验已有，但成绩、排行榜、徽章还没闭环 |
+| 奥林匹克小游戏 | `games.html` + 游戏目录 | `/api/games`、`/api/game-records`、`/api/users/me/growth` | 已完成成绩记录第一版 | 游戏完成可写入成绩并触发学习天数、知识点和徽章，下一步做排行榜 |
 | 科学人物 | `scientists.html`、`scientist-detail.html` | 内容模型可承载，接口未落地 | 静态 | 内容质量适合长期沉淀，应接入 CMS 和详情数据 |
 | 联系我 | `contact.html` | 数据模型未明确接入接口 | 静态本地提示 | 邮箱清晰，但表单留言没有真正保存和通知 |
 
@@ -251,9 +251,9 @@ AI 生成介绍、学习价值、改造任务
 - 待继续：今日前沿接入自动抓取、AI 草稿和人工审核发布流程。
 - 已完成第一版：开源项目接入动态接口、周榜和历史榜单。
 - 待继续：开源项目接入 GitHub 自动抓取、AI 改写和人工审核流程。
-- AI 学习接入书籍、章节、阅读任务和阅读进度。
-- 小游戏写入真实成绩，接入用户成长体系。
-- 用户浮窗展示真实学习天数、连续学习、徽章、知识点数量。
+- 已完成第一版：AI 学习接入书籍、章节、阅读任务和阅读进度。
+- 已完成第一版：小游戏写入真实成绩，接入用户成长体系。
+- 已完成第一版：用户浮窗展示真实学习天数、连续学习、徽章、知识点数量。
 
 ### P2：提升留存和个性化
 

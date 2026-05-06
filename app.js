@@ -186,15 +186,18 @@ function updateProfilePopover(user = null) {
   const learned = Number(summary.mastered_knowledge_points || 0);
   const days = Number(summary.learning_days || 0);
   const streak = Number(summary.streak_days || 0);
-  const level = Math.max(1, Math.floor((learned + days) / 3) + 1);
-  const xp = Math.min(100, (learned * 18 + days * 8 + streak * 12) % 100);
+  const badgeCount = Number(summary.badge_count || summary.badges?.length || 0);
+  const level = Number(summary.level || Math.max(1, Math.floor((learned + days) / 3) + 1));
+  const currentXp = Number(summary.current_xp || 0);
+  const nextLevelXp = Number(summary.next_level_xp || 100);
+  const xp = nextLevelXp ? Math.min(100, Math.round((currentXp / nextLevelXp) * 100)) : 0;
 
   if (profileAvatar) profileAvatar.textContent = firstChar;
   if (profileGreeting) profileGreeting.textContent = `你好，${nickname}！`;
   if (profileLevel) profileLevel.textContent = user ? `Lv.${level}` : "Lv.0";
   if (profileXpBar) profileXpBar.style.width = `${user ? Math.max(8, xp) : 0}%`;
   if (profileXpText) profileXpText.textContent = user
-    ? `${learned} 个知识点 · 连续 ${streak} 天 · 累计 ${days} 天`
+    ? `${learned} 个知识点 · ${badgeCount} 枚徽章 · 连续 ${streak} 天 · 累计 ${days} 天`
     : "登录后生成学习天数、徽章和知识点记录";
   if (profileGrade) profileGrade.textContent = user?.grade ? gradeLabel(user.grade) : "登录后生成";
   if (profileInterests) profileInterests.textContent = "物理 · AI · 太空 · 游戏";
@@ -353,6 +356,18 @@ async function refreshCurrentUser() {
   renderLoggedOut();
 }
 
+async function refreshGrowthSummary() {
+  if (!localStorage.getItem(AUTH_TOKEN_KEY)) return;
+
+  try {
+    const payload = await fetchJson("/api/users/me/growth");
+    latestLearningSummary = payload.data || latestLearningSummary;
+    updateProfilePopover(getSavedAuthUser());
+  } catch (error) {
+    console.warn("Growth summary refresh failed.", error);
+  }
+}
+
 async function handleLogin(event) {
   event.preventDefault();
   const formData = new FormData(loginForm);
@@ -372,6 +387,7 @@ async function handleLogin(event) {
 
     saveAuth(result.data.user, result.data.token);
     renderLoggedIn(result.data.user);
+    await refreshGrowthSummary();
     setAuthMessage("登录成功", "success");
     closeAuthModal();
   } catch (error) {
@@ -403,6 +419,7 @@ async function handleRegister(event) {
 
     saveAuth(result.data.user, result.data.token);
     renderLoggedIn(result.data.user);
+    await refreshGrowthSummary();
     setAuthMessage("注册成功", "success");
     closeAuthModal();
   } catch (error) {

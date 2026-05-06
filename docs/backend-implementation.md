@@ -14,6 +14,8 @@
 - 联系留言保存：联系我页面表单已接入后端，留言写入数据库。
 - 今日前沿动态化第一版：前沿页面已从后端读取摘要、列表、当天新闻和详情数据。
 - 开源项目雷达动态化第一版：项目页已从后端读取当前周榜、历史榜单和项目详情数据。
+- AI 学习动态化第一版：AI 学习页已从后端读取书籍、章节、阅读任务，并支持登录用户保存阅读进度。
+- 奥林匹克小游戏成绩记录第一版：小游戏完成后可写入成绩，触发学习天数、知识点完成和徽章。
 
 ## 本地启动
 
@@ -78,7 +80,12 @@ http://localhost:3001
 | GET | `/api/projects/rankings/current` | 当前开源项目周榜 |
 | GET | `/api/projects/rankings` | 开源项目历史榜单，支持 `category` 和分页 |
 | GET | `/api/projects/:id` | 开源项目详情，支持项目 ID 或 slug |
-| POST | `/api/game-records` | 写入用户游戏记录 |
+| GET | `/api/ai/books` | AI 学习书籍列表，支持年级过滤和分页 |
+| GET | `/api/ai/books/:slug` | AI 学习书籍详情，包含章节导读和阅读任务 |
+| GET | `/api/ai/books/:slug/progress` | 当前登录用户的书籍阅读进度 |
+| POST | `/api/ai/books/:slug/progress` | 保存当前登录用户的书籍阅读进度 |
+| GET | `/api/users/me/growth` | 当前登录用户成长汇总，包括学习天数、连续学习、徽章和 XP |
+| POST | `/api/game-records` | 写入用户游戏记录，支持 `game_id` 或 `game_slug` |
 | GET | `/api/recommendations/:userId` | 获取用户推荐结果 |
 
 ## 本阶段 P0 优化
@@ -89,7 +96,7 @@ http://localhost:3001
 - 新增 `user_sessions` 表，登录 token 以哈希形式持久化保存，退出时标记撤销。
 - 新增 `contact_messages` 表，联系我页面留言可写入数据库。
 - 新增 `/api/home/summary`，首页从单纯拼接多个列表，升级为可控运营摘要接口。
-- 前端统一静态资源版本号为 `20260506d`，减少缓存造成的旧页面问题。
+- 前端统一静态资源版本号为 `20260506e`，减少缓存造成的旧页面问题。
 
 ## 本阶段 P1 优化
 
@@ -106,6 +113,23 @@ http://localhost:3001
 - 项目榜单复用 `open_source_projects`、`project_rankings`、`project_ranking_items`。
 - `projects.html` 保留静态兜底内容，但页面加载后会由 `projects.js` 自动替换为后端周榜。
 - `prisma/seed.js` 新增开源项目周榜和 5 个项目示例，覆盖 AI、小游戏、科学模拟和初学者分类。
+
+AI 学习动态化：
+
+- 新增 `ai_books`、`ai_book_chapters`、`ai_book_tasks`、`user_book_progress` 四张表。
+- 新增 `/api/ai/books`、`/api/ai/books/:slug`、`/api/ai/books/:slug/progress`。
+- `ai-learning.html` 保留静态兜底内容，但页面加载后会由 `ai-learning.js` 自动替换为后端书籍、章节、任务和阅读器数据。
+- 登录用户可在 AI 学习页保存阅读进度，后续可接入学习天数、连续学习、徽章和推荐体系。
+- `prisma/seed.js` 新增《解锁 AI 魔法 - 和爸爸一起走进智能未来》示例书籍、4 个章节导读、4 个阅读任务和 1 条示例阅读进度。
+
+小游戏成绩和成长体系：
+
+- 新增 `/api/users/me/growth`，聚合知识点进度、AI 书籍进度、小游戏成绩和徽章。
+- `/api/game-records` 支持登录用户通过 `game_slug` 上报成绩，后端自动识别用户并关联游戏。
+- 5 个 Kevin's Olympic 游戏页面接入 `kevin-olympic-games/olympic-tracker.js`，比赛结束时上报成绩。
+- 后端在小游戏完成后写入 `game_records`，同时更新关联知识点的 `learning_progress`。
+- 第一版徽章规则已接入：首次完成小游戏获得“奥林匹克初体验”，高光成绩获得“奥林匹克奖牌”，累计完成多个游戏获得“奥林匹克选手”。
+- `prisma/seed.js` 已补齐足球冠军赛、守门员挑战、点球大战、乒乓球冠军赛、游泳竞速 5 个小游戏记录。
 
 本地数据库说明：
 

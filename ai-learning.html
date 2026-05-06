@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AI 学习 · 星火 AI 科学馆</title>
-    <link rel="stylesheet" href="./styles.css?v=20260506d" />
+    <link rel="stylesheet" href="./styles.css?v=20260506e" />
   </head>
   <body>
     <header class="site-header">
@@ -34,12 +34,12 @@
         <div>
           <p>AI 学习书架</p>
           <h1 id="ai-learning-title">和孩子一起读懂智能未来</h1>
-          <span>这里会整理适合中小学生的 AI 书籍、导读、练习任务和在线阅读内容。第一本书已上线，后续可以继续添加更多书。</span>
+          <span id="aiLearningIntro">书籍、章节导读、阅读任务和在线阅读会从后端同步。第一本书已上线，后续可以继续添加更多书。</span>
         </div>
         <a href="#book-reader">打开在线阅读</a>
       </section>
 
-      <section class="book-shelf" aria-label="AI 学习书籍">
+      <section class="book-shelf" id="bookShelf" aria-label="AI 学习书籍">
         <article class="book-card featured">
           <span>已上线</span>
           <h2>解锁 AI 魔法</h2>
@@ -61,15 +61,21 @@
 
       <section class="ai-book-layout">
         <article class="ai-book-guide" aria-labelledby="book-guide-title">
-          <p>网页版导读</p>
-          <h2 id="book-guide-title">《解锁 AI 魔法》怎么学</h2>
-          <div class="guide-grid">
+          <div class="book-overview">
+            <img id="bookCover" src="./assets/ai-magic-cover.png" alt="解锁 AI 魔法封面" />
+            <div>
+              <p>网页版导读</p>
+              <h2 id="book-guide-title">《解锁 AI 魔法》怎么学</h2>
+              <span id="bookDescription">用生活化问题理解人工智能、模型、提示词和未来能力。</span>
+            </div>
+          </div>
+          <div class="guide-grid" id="chapterGrid">
             <section>
               <h3>1. 先理解 AI 是什么</h3>
               <p>把 AI 看成一种会从大量例子里总结规律的工具。它不是魔法师，而是能帮我们观察、分类、生成和推理的智能伙伴。</p>
             </section>
             <section>
-              <h3>2. 再学习怎么和 AI 对话</h3>
+              <h3>2. 学习怎么和 AI 对话</h3>
               <p>好问题会带来好答案。学习描述目标、补充背景、给出限制条件，是使用 AI 的第一项核心能力。</p>
             </section>
             <section>
@@ -84,8 +90,15 @@
         </article>
 
         <aside class="ai-study-path" aria-label="学习任务">
+          <div class="study-progress-card">
+            <span>阅读进度</span>
+            <strong id="readingProgressText">未登录</strong>
+            <div class="study-progress-track"><i id="readingProgressBar"></i></div>
+            <button id="markReadingProgress" type="button">标记已读 25%</button>
+            <small id="progressHint">登录后可保存阅读进度。</small>
+          </div>
           <h2>阅读任务</h2>
-          <ol>
+          <ol id="bookTasks">
             <li>读完一节后，用自己的话写下 3 个关键词。</li>
             <li>向 AI 提一个更清楚的问题，再比较两次回答。</li>
             <li>找出一个 AI 回答里需要核实的地方。</li>
@@ -100,13 +113,16 @@
             <p>在线阅读</p>
             <h2 id="reader-title">解锁 AI 魔法 - 和爸爸一起走进智能未来</h2>
           </div>
-          <a href="./docs/解锁ai魔法-和爸爸一起走进智能未来.pdf" target="_blank" rel="noreferrer">新窗口打开 PDF</a>
+          <a id="readerOpenLink" href="./docs/解锁ai魔法-和爸爸一起走进智能未来.pdf" target="_blank" rel="noreferrer">新窗口打开 PDF</a>
         </div>
         <iframe
+          id="bookReaderFrame"
           title="解锁 AI 魔法 PDF 在线阅读"
           src="./docs/解锁ai魔法-和爸爸一起走进智能未来.pdf#view=FitH"
         ></iframe>
       </section>
     </main>
+
+    <script src="./ai-learning.js?v=20260506e"></script>
   </body>
 </html>

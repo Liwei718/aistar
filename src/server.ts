@@ -180,6 +180,98 @@ const demoProjectItems = [
   }
 ];
 
+const demoAiBook = {
+  id: "demo-ai-book-magic",
+  title: "解锁 AI 魔法",
+  subtitle: "和爸爸一起走进智能未来",
+  slug: "ai-magic-with-dad",
+  description: "适合亲子共读，用生活化问题理解人工智能、模型、提示词和未来能力。",
+  cover_image_url: "./assets/ai-magic-cover.png",
+  pdf_url: "./docs/解锁ai魔法-和爸爸一起走进智能未来.pdf",
+  school_stage: "general",
+  min_grade: 4,
+  max_grade: 9,
+  status: "published",
+  sort_order: 1,
+  metadata: {
+    reading_minutes: 90,
+    audience: "小学高年级到初中",
+    theme: "AI 启蒙"
+  },
+  chapters: [
+    {
+      id: "demo-ai-chapter-1",
+      chapter_no: 1,
+      title: "先理解 AI 是什么",
+      summary: "把 AI 看成一种会从大量例子里总结规律的工具。它不是魔法师，而是能帮我们观察、分类、生成和推理的智能伙伴。",
+      key_points: ["模式识别", "数据", "智能工具"],
+      sort_order: 1
+    },
+    {
+      id: "demo-ai-chapter-2",
+      chapter_no: 2,
+      title: "学习怎么和 AI 对话",
+      summary: "好问题会带来好答案。学习描述目标、补充背景、给出限制条件，是使用 AI 的第一项核心能力。",
+      key_points: ["提示词", "背景信息", "限制条件"],
+      sort_order: 2
+    },
+    {
+      id: "demo-ai-chapter-3",
+      chapter_no: 3,
+      title: "练习判断 AI 的答案",
+      summary: "AI 可能会答错，也可能遗漏信息。读者需要学会追问、核对来源、比较不同答案，并保留自己的判断。",
+      key_points: ["追问", "核实", "独立判断"],
+      sort_order: 3
+    },
+    {
+      id: "demo-ai-chapter-4",
+      chapter_no: 4,
+      title: "把 AI 用到学习和创造里",
+      summary: "可以让 AI 帮忙解释知识点、设计小游戏、整理读书笔记、生成创意草稿，但最后的理解和作品要由自己完成。",
+      key_points: ["学习助手", "创造", "作品意识"],
+      sort_order: 4
+    }
+  ],
+  tasks: [
+    {
+      id: "demo-ai-task-1",
+      chapter_id: null,
+      task_type: "keyword",
+      title: "写下 3 个关键词",
+      description: "读完一节后，用自己的话写下 3 个关键词。",
+      prompt: "这节里哪三个词最重要？为什么？",
+      sort_order: 1
+    },
+    {
+      id: "demo-ai-task-2",
+      chapter_id: null,
+      task_type: "prompt",
+      title: "改写一个更清楚的问题",
+      description: "向 AI 提一个更清楚的问题，再比较两次回答。",
+      prompt: "把一个模糊问题改成有目标、有背景、有要求的问题。",
+      sort_order: 2
+    },
+    {
+      id: "demo-ai-task-3",
+      chapter_id: null,
+      task_type: "verify",
+      title: "找出需要核实的地方",
+      description: "找出一个 AI 回答里需要核实的地方。",
+      prompt: "这段回答里哪句话需要查来源？",
+      sort_order: 3
+    },
+    {
+      id: "demo-ai-task-4",
+      chapter_id: null,
+      task_type: "card",
+      title: "做成学习卡片",
+      description: "把本章内容做成一张学习卡片。",
+      prompt: "用一句话解释本章，再配一个生活例子。",
+      sort_order: 4
+    }
+  ]
+};
+
 function isDatabaseConnectionError(error: unknown) {
   return error instanceof Error && /Can't reach database server|ECONNREFUSED|P1001|connect/i.test(error.message);
 }
@@ -328,6 +420,248 @@ function projectItemFromRanking(item: {
     remix_ideas: item.project.remix_ideas,
     reason: item.reason || item.project.recommend_reason
   };
+}
+
+function aiBookSummary(book: {
+  id: string;
+  title: string;
+  subtitle: string | null;
+  slug: string;
+  description: string | null;
+  cover_image_url: string | null;
+  pdf_url: string | null;
+  school_stage: string | null;
+  min_grade: number | null;
+  max_grade: number | null;
+  status: string;
+  sort_order: number;
+  metadata: unknown;
+}) {
+  return {
+    id: book.id,
+    title: book.title,
+    subtitle: book.subtitle,
+    slug: book.slug,
+    description: book.description,
+    cover_image_url: book.cover_image_url,
+    pdf_url: book.pdf_url,
+    school_stage: book.school_stage,
+    min_grade: book.min_grade,
+    max_grade: book.max_grade,
+    status: book.status,
+    sort_order: book.sort_order,
+    metadata: metadataOf(book.metadata),
+    href: `./ai-learning.html?book=${book.slug}`
+  };
+}
+
+function aiBookDetail(book: Parameters<typeof aiBookSummary>[0] & {
+  chapters?: Array<{
+    id: string;
+    chapter_no: number;
+    title: string;
+    summary: string | null;
+    key_points: unknown;
+    sort_order: number;
+  }>;
+  tasks?: Array<{
+    id: string;
+    chapter_id: string | null;
+    task_type: string;
+    title: string;
+    description: string | null;
+    prompt: string | null;
+    sort_order: number;
+  }>;
+}) {
+  return {
+    ...aiBookSummary(book),
+    chapters: book.chapters?.map((chapter) => ({
+      ...chapter,
+      key_points: Array.isArray(chapter.key_points) ? chapter.key_points : []
+    })) ?? [],
+    tasks: book.tasks ?? []
+  };
+}
+
+function learningDateKey(date: Date) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Shanghai",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  })
+    .formatToParts(date)
+    .reduce<Record<string, string>>((result, part) => {
+      result[part.type] = part.value;
+      return result;
+    }, {});
+
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+
+function addDays(date: Date, offset: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + offset);
+  return next;
+}
+
+function calculateStreak(dateKeys: Set<string>) {
+  const today = new Date();
+  const todayKey = learningDateKey(today);
+  const yesterdayKey = learningDateKey(addDays(today, -1));
+
+  if (!dateKeys.has(todayKey) && !dateKeys.has(yesterdayKey)) {
+    return 0;
+  }
+
+  let cursor = dateKeys.has(todayKey) ? today : addDays(today, -1);
+  let streak = 0;
+
+  while (dateKeys.has(learningDateKey(cursor))) {
+    streak += 1;
+    cursor = addDays(cursor, -1);
+  }
+
+  return streak;
+}
+
+function calculateLongestStreak(dateKeys: Set<string>) {
+  const sorted = [...dateKeys].sort();
+  let longest = 0;
+  let current = 0;
+  let previous = "";
+
+  for (const key of sorted) {
+    if (!previous) {
+      current = 1;
+    } else {
+      const previousDate = new Date(`${previous}T00:00:00+08:00`);
+      const expected = learningDateKey(addDays(previousDate, 1));
+      current = key === expected ? current + 1 : 1;
+    }
+
+    longest = Math.max(longest, current);
+    previous = key;
+  }
+
+  return longest;
+}
+
+async function growthSummaryForUser(userId: string) {
+  const [learningProgress, bookProgress, gameRecords, badges] = await Promise.all([
+    prisma.learningProgress.findMany({
+      where: { user_id: userId }
+    }),
+    prisma.userBookProgress.findMany({
+      where: { user_id: userId }
+    }),
+    prisma.gameRecord.findMany({
+      where: { user_id: userId }
+    }),
+    prisma.userBadge.findMany({
+      where: { user_id: userId },
+      include: { badge: true },
+      orderBy: { earned_at: "desc" }
+    })
+  ]);
+
+  const effectiveDates = new Set<string>();
+
+  for (const item of learningProgress) {
+    if (!["completed", "mastered"].includes(item.status)) continue;
+    const date = item.last_activity_at || item.completed_at || item.created_at;
+    effectiveDates.add(learningDateKey(date));
+  }
+
+  for (const item of bookProgress) {
+    if (item.progress_percent <= 0) continue;
+    const date = item.last_read_at || item.completed_at || item.created_at;
+    effectiveDates.add(learningDateKey(date));
+  }
+
+  for (const item of gameRecords) {
+    if (item.status !== "completed") continue;
+    const date = item.completed_at || item.created_at;
+    effectiveDates.add(learningDateKey(date));
+  }
+
+  const completedKnowledgeCount = learningProgress.filter((item) =>
+    ["completed", "mastered"].includes(item.status)
+  ).length;
+  const masteredKnowledgeCount = learningProgress.filter((item) => item.status === "mastered").length;
+  const completedGameCount = gameRecords.filter((item) => item.status === "completed").length;
+  const completedBookCount = bookProgress.filter((item) => item.status === "completed").length;
+  const totalLearningSeconds =
+    gameRecords.reduce((total, item) => total + (item.duration_seconds || 0), 0) +
+    bookProgress.reduce((total, item) => total + Math.max(0, item.progress_percent) * 30, 0);
+  const totalXp =
+    completedGameCount * 25 +
+    completedKnowledgeCount * 40 +
+    masteredKnowledgeCount * 60 +
+    completedBookCount * 80 +
+    badges.length * 20;
+  const level = Math.max(1, Math.floor(totalXp / 120) + 1);
+  const currentXp = totalXp % 120;
+
+  return {
+    learning_days: effectiveDates.size,
+    streak_days: calculateStreak(effectiveDates),
+    longest_streak_days: calculateLongestStreak(effectiveDates),
+    badge_count: badges.length,
+    completed_knowledge_count: completedKnowledgeCount,
+    mastered_knowledge_points: masteredKnowledgeCount,
+    completed_game_count: completedGameCount,
+    completed_book_count: completedBookCount,
+    total_learning_seconds: totalLearningSeconds,
+    level,
+    total_xp: totalXp,
+    current_xp: currentXp,
+    next_level_xp: 120,
+    badges: badges.slice(0, 3).map((item) => ({
+      name: item.badge.name,
+      slug: item.badge.slug,
+      description: item.badge.description,
+      earned_at: item.earned_at
+    }))
+  };
+}
+
+async function awardBadge(userId: string, slug: string, badge: { name: string; description: string }, source: {
+  source_type: string;
+  source_id: string;
+}) {
+  const badgeRecord = await prisma.badge.upsert({
+    where: { slug },
+    update: {
+      name: badge.name,
+      description: badge.description,
+      enabled: true
+    },
+    create: {
+      slug,
+      name: badge.name,
+      description: badge.description,
+      enabled: true,
+      rule_config: { source: "auto_game_record" }
+    }
+  });
+
+  await prisma.userBadge.upsert({
+    where: {
+      user_id_badge_id: {
+        user_id: userId,
+        badge_id: badgeRecord.id
+      }
+    },
+    update: {},
+    create: {
+      user_id: userId,
+      badge_id: badgeRecord.id,
+      source_type: source.source_type,
+      source_id: source.source_id
+    }
+  });
 }
 
 function normalizeHermesBaseUrl() {
@@ -567,6 +901,7 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/knowledge-points", description: "已发布知识点列表" },
       { method: "GET", path: "/api/games", description: "已发布小游戏列表" },
       { method: "GET", path: "/api/home/summary", description: "首页运营位摘要" },
+      { method: "GET", path: "/api/users/me/growth", description: "当前用户学习成长汇总" },
       { method: "GET", path: "/api/frontier/summary", description: "今日前沿首页摘要" },
       { method: "GET", path: "/api/frontier/items", description: "今日前沿完整列表" },
       { method: "GET", path: "/api/frontier/today-news", description: "今日前沿当天新闻" },
@@ -574,6 +909,10 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/projects/rankings/current", description: "当前开源项目周榜" },
       { method: "GET", path: "/api/projects/rankings", description: "开源项目历史榜单" },
       { method: "GET", path: "/api/projects/:id", description: "开源项目详情" },
+      { method: "GET", path: "/api/ai/books", description: "AI 学习书籍列表" },
+      { method: "GET", path: "/api/ai/books/:slug", description: "AI 学习书籍详情、章节和任务" },
+      { method: "GET", path: "/api/ai/books/:slug/progress", description: "当前用户 AI 书籍阅读进度" },
+      { method: "POST", path: "/api/ai/books/:slug/progress", description: "保存当前用户 AI 书籍阅读进度" },
       { method: "POST", path: "/api/contact-messages", description: "提交联系留言" },
       { method: "POST", path: "/api/game-records", description: "写入用户游戏记录" },
       { method: "GET", path: "/api/recommendations/:userId", description: "获取用户推荐结果" }
@@ -737,11 +1076,30 @@ app.post("/api/auth/logout", async (req, res) => {
   res.json({ ok: true });
 });
 
+app.get("/api/users/me/growth", async (req, res, next) => {
+  try {
+    const currentUser = await findCurrentUser(req);
+    if (!currentUser) {
+      res.status(401).json({ error: "unauthorized", message: "登录后才能查看成长数据" });
+      return;
+    }
+
+    res.json(jsonSafe({ data: await growthSummaryForUser(currentUser.id) }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "读取成长数据需要数据库连接。" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
 app.get("/api/home/summary", async (req, res, next) => {
   try {
     const currentUser = await findCurrentUser(req);
 
-    const [frontierContents, recommendations, featuredGame, learningProgress, badges] = await Promise.all([
+    const [frontierContents, recommendations, featuredGame, growth] = await Promise.all([
       prisma.content.findMany({
         where: {
           status: "published",
@@ -773,26 +1131,8 @@ app.get("/api/home/summary", async (req, res, next) => {
           knowledge_points: { include: { knowledge_point: true } }
         }
       }),
-      currentUser
-        ? prisma.learningProgress.findMany({
-            where: { user_id: currentUser.id }
-          })
-        : Promise.resolve([]),
-      currentUser
-        ? prisma.userBadge.findMany({
-            where: { user_id: currentUser.id },
-            include: { badge: true }
-          })
-        : Promise.resolve([])
+      currentUser ? growthSummaryForUser(currentUser.id) : Promise.resolve(null)
     ]);
-
-    const masteredCount = learningProgress.filter((item) => item.status === "completed").length;
-    const activeDays = new Set(
-      learningProgress
-        .map((item) => item.last_activity_at || item.completed_at || item.created_at)
-        .filter(Boolean)
-        .map((date) => date.toISOString().slice(0, 10))
-    );
 
     const frontierSummary = frontierContents.length
       ? frontierContents.map((item) => ({
@@ -813,16 +1153,7 @@ app.get("/api/home/summary", async (req, res, next) => {
         recommendation_cards: recommendations.length
           ? recommendations.map((item) => normalizeHomeRecommendation(item, contentHref(item.content_type)))
           : demoHomeSummary.recommendation_cards,
-        learning_summary: {
-          learning_days: activeDays.size,
-          streak_days: activeDays.size ? 1 : 0,
-          mastered_knowledge_points: masteredCount,
-          badges: badges.map((item) => ({
-            name: item.badge.name,
-            slug: item.badge.slug,
-            earned_at: item.earned_at
-          }))
-        }
+        learning_summary: growth || demoHomeSummary.learning_summary
       }
     }));
   } catch (error) {
@@ -1171,6 +1502,225 @@ app.get("/api/projects/:id", async (req, res, next) => {
   }
 });
 
+app.get("/api/ai/books", async (req, res, next) => {
+  try {
+    const query = listQuerySchema
+      .extend({
+        stage: z.string().optional(),
+        grade: z.coerce.number().int().min(1).max(12).optional()
+      })
+      .parse(req.query);
+
+    const books = await prisma.aiBook.findMany({
+      where: {
+        status: "published",
+        deleted_at: null,
+        school_stage: query.stage as never,
+        ...(query.grade
+          ? {
+              OR: [
+                { min_grade: null },
+                { min_grade: { lte: query.grade } }
+              ],
+              AND: [
+                {
+                  OR: [
+                    { max_grade: null },
+                    { max_grade: { gte: query.grade } }
+                  ]
+                }
+              ]
+            }
+          : {})
+      },
+      orderBy: [{ sort_order: "asc" }, { created_at: "desc" }],
+      take: query.limit,
+      skip: query.offset
+    });
+
+    res.json(jsonSafe({
+      data: books.length ? books.map(aiBookSummary) : [aiBookSummary(demoAiBook)],
+      mode: books.length ? "live" : "demo"
+    }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.json({ data: [aiBookSummary(demoAiBook)], mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/ai/books/:slug", async (req, res, next) => {
+  try {
+    const params = z.object({ slug: z.string() }).parse(req.params);
+    const book = await prisma.aiBook.findFirst({
+      where: {
+        OR: [
+          z.string().uuid().safeParse(params.slug).success ? { id: params.slug } : undefined,
+          { slug: params.slug }
+        ].filter(Boolean) as Array<{ id?: string; slug?: string }>,
+        status: "published",
+        deleted_at: null
+      },
+      include: {
+        chapters: {
+          where: { status: "published" },
+          orderBy: [{ sort_order: "asc" }, { chapter_no: "asc" }]
+        },
+        tasks: {
+          where: { status: "published" },
+          orderBy: [{ sort_order: "asc" }, { created_at: "asc" }]
+        }
+      }
+    });
+
+    if (!book) {
+      if (params.slug === demoAiBook.slug || params.slug === demoAiBook.id) {
+        res.json({ data: aiBookDetail(demoAiBook), mode: "demo" });
+        return;
+      }
+
+      res.status(404).json({ error: "not_found", message: "未找到这本 AI 学习书籍" });
+      return;
+    }
+
+    res.json(jsonSafe({ data: aiBookDetail(book), mode: "live" }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.json({ data: aiBookDetail(demoAiBook), mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/ai/books/:slug/progress", async (req, res, next) => {
+  try {
+    const currentUser = await findCurrentUser(req);
+    if (!currentUser) {
+      res.status(401).json({ error: "unauthorized", message: "登录后才能读取阅读进度" });
+      return;
+    }
+
+    const params = z.object({ slug: z.string() }).parse(req.params);
+    const book = await prisma.aiBook.findFirst({
+      where: {
+        OR: [
+          z.string().uuid().safeParse(params.slug).success ? { id: params.slug } : undefined,
+          { slug: params.slug }
+        ].filter(Boolean) as Array<{ id?: string; slug?: string }>,
+        deleted_at: null
+      }
+    });
+
+    if (!book) {
+      res.status(404).json({ error: "not_found", message: "未找到这本 AI 学习书籍" });
+      return;
+    }
+
+    const progress = await prisma.userBookProgress.findMany({
+      where: {
+        user_id: currentUser.id,
+        book_id: book.id
+      },
+      orderBy: [{ updated_at: "desc" }]
+    });
+
+    res.json(jsonSafe({ data: progress }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "读取阅读进度需要数据库连接。" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.post("/api/ai/books/:slug/progress", async (req, res, next) => {
+  try {
+    const currentUser = await findCurrentUser(req);
+    if (!currentUser) {
+      res.status(401).json({ error: "unauthorized", message: "登录后才能保存阅读进度" });
+      return;
+    }
+
+    const params = z.object({ slug: z.string() }).parse(req.params);
+    const body = z
+      .object({
+        chapter_id: z.string().uuid().optional().nullable(),
+        progress_percent: z.coerce.number().int().min(0).max(100),
+        status: z.enum(["not_started", "reading", "completed"]).optional(),
+        notes: z.string().max(2000).optional()
+      })
+      .parse(req.body);
+
+    const book = await prisma.aiBook.findFirst({
+      where: {
+        OR: [
+          z.string().uuid().safeParse(params.slug).success ? { id: params.slug } : undefined,
+          { slug: params.slug }
+        ].filter(Boolean) as Array<{ id?: string; slug?: string }>,
+        deleted_at: null
+      }
+    });
+
+    if (!book) {
+      res.status(404).json({ error: "not_found", message: "未找到这本 AI 学习书籍" });
+      return;
+    }
+
+    const status = body.status ?? (body.progress_percent >= 100 ? "completed" : "reading");
+    const progressWhere = {
+      user_id: currentUser.id,
+      book_id: book.id,
+      chapter_id: body.chapter_id ?? null
+    };
+    const existingProgress = await prisma.userBookProgress.findFirst({
+      where: progressWhere
+    });
+
+    const progress = existingProgress
+      ? await prisma.userBookProgress.update({
+          where: { id: existingProgress.id },
+          data: {
+            progress_percent: body.progress_percent,
+            status,
+            notes: body.notes,
+            last_read_at: new Date(),
+            completed_at: status === "completed" ? new Date() : null
+          }
+        })
+      : await prisma.userBookProgress.create({
+          data: {
+            user_id: currentUser.id,
+            book_id: book.id,
+            chapter_id: body.chapter_id ?? null,
+            progress_percent: body.progress_percent,
+            status,
+            notes: body.notes,
+            last_read_at: new Date(),
+            completed_at: status === "completed" ? new Date() : undefined
+          }
+        });
+
+    res.json(jsonSafe({ data: progress }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({
+        error: "database_unavailable",
+        message: "保存阅读进度需要先启动 PostgreSQL 并执行 Prisma 迁移。"
+      });
+      return;
+    }
+
+    next(error);
+  }
+});
+
 app.get("/api/contents", async (req, res, next) => {
   try {
     const query = listQuerySchema
@@ -1341,8 +1891,9 @@ app.post("/api/game-records", async (req, res, next) => {
   try {
     const body = z
       .object({
-        user_id: z.string().uuid(),
-        game_id: z.string().uuid(),
+        user_id: z.string().uuid().optional(),
+        game_id: z.string().uuid().optional(),
+        game_slug: z.string().max(180).optional(),
         level_id: z.string().uuid().optional(),
         score: z.number().int().optional(),
         max_score: z.number().int().optional(),
@@ -1353,16 +1904,121 @@ app.post("/api/game-records", async (req, res, next) => {
       })
       .parse(req.body);
 
+    const currentUser = await findCurrentUser(req);
+    const userId = currentUser?.id || body.user_id;
+    if (!userId) {
+      res.status(401).json({ error: "unauthorized", message: "需要登录后再提交游戏记录" });
+      return;
+    }
+
+    const game = body.game_id || body.game_slug
+      ? await prisma.game.findFirst({
+          where: {
+            OR: [
+              body.game_id ? { id: body.game_id } : undefined,
+              body.game_slug ? { slug: body.game_slug } : undefined
+            ].filter(Boolean) as Array<{ id?: string; slug?: string }>,
+            deleted_at: null
+          },
+          include: {
+            knowledge_points: { include: { knowledge_point: true } }
+          }
+        })
+      : null;
+
+    if (!game) {
+      res.status(404).json({ error: "not_found", message: "未找到对应小游戏" });
+      return;
+    }
+
     const now = new Date();
     const record = await prisma.gameRecord.create({
       data: {
-        ...body,
+        user_id: userId,
+        game_id: game.id,
+        level_id: body.level_id,
+        score: body.score,
+        max_score: body.max_score,
+        status: body.status,
+        duration_seconds: body.duration_seconds,
+        learned_knowledge_point_ids: game?.knowledge_points.map((item) => item.knowledge_point_id) || [],
         started_at: body.status === "started" ? now : undefined,
         completed_at: body.status === "completed" ? now : undefined,
         mistakes: body.mistakes ?? undefined,
         metadata: body.metadata ?? undefined
       }
     });
+
+    if (body.status === "completed") {
+      await awardBadge(userId, "first-game-complete", {
+        name: "奥林匹克初体验",
+        description: "第一次完成 Kevin's Olympic 游戏。"
+      }, {
+        source_type: "game_record",
+        source_id: record.id
+      });
+
+      const completedCount = await prisma.gameRecord.count({
+        where: {
+          user_id: userId,
+          status: "completed"
+        }
+      });
+
+      if (completedCount >= 5) {
+        await awardBadge(userId, "olympic-athlete", {
+          name: "奥林匹克选手",
+          description: "完成了多个 Kevin's Olympic 游戏。"
+        }, {
+          source_type: "game_record",
+          source_id: record.id
+        });
+      }
+
+      const resultText = typeof body.metadata === "object" && body.metadata && "result" in body.metadata
+        ? String((body.metadata as Record<string, unknown>).result)
+        : "";
+      if (["win", "champion", "gold", "silver", "bronze"].includes(resultText)) {
+        await awardBadge(userId, "olympic-medalist", {
+          name: "奥林匹克奖牌",
+          description: "在 Kevin's Olympic 中拿到了一次高光成绩。"
+        }, {
+          source_type: "game_record",
+          source_id: record.id
+        });
+      }
+    }
+
+    if (game?.knowledge_points.length) {
+      for (const item of game.knowledge_points) {
+        await prisma.learningProgress.upsert({
+          where: {
+            user_id_knowledge_point_id: {
+              user_id: userId,
+              knowledge_point_id: item.knowledge_point_id
+            }
+          },
+          update: {
+            status: "completed",
+            progress_percent: 100,
+            last_activity_at: now,
+            completed_at: now,
+            source_type: "game_record",
+            source_id: record.id
+          },
+          create: {
+            user_id: userId,
+            knowledge_point_id: item.knowledge_point_id,
+            status: "completed",
+            progress_percent: 100,
+            last_activity_at: now,
+            completed_at: now,
+            source_type: "game_record",
+            source_id: record.id
+          }
+        });
+      }
+    }
 
     res.status(201).json(jsonSafe({ data: record }));
   } catch (error) {

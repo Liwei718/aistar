@@ -2385,6 +2385,10 @@ input[type="range"] {
   font-weight: 900;
 }
 
+.ai-learning-hero a {
+  align-self: center;
+}
+
 .book-shelf {
   display: grid;
   grid-template-columns: 1.35fr repeat(2, minmax(0, 0.82fr));
@@ -2450,6 +2454,11 @@ input[type="range"] {
   background: rgba(255, 255, 255, 0.72);
 }
 
+.book-card.is-active {
+  outline: 2px solid rgba(79, 121, 255, 0.55);
+  box-shadow: 0 0 0 3px rgba(79, 121, 255, 0.08);
+}
+
 .ai-book-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 320px;
@@ -2487,6 +2496,30 @@ input[type="range"] {
   background: #fff;
 }
 
+.book-overview {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.book-overview img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  border: 1px solid #d7e5f8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.book-overview span {
+  display: block;
+  color: #526078;
+  line-height: 1.6;
+}
+
 .guide-grid h3 {
   margin-bottom: 8px;
   color: #10204d;
@@ -2509,6 +2542,58 @@ input[type="range"] {
   gap: 12px;
   padding-left: 20px;
   margin: 0;
+}
+
+.study-progress-card {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 16px;
+  border: 1px solid #d7e5f8;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.study-progress-card span {
+  color: var(--blue);
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.study-progress-card strong {
+  color: #10204d;
+  font-size: 20px;
+}
+
+.study-progress-track {
+  overflow: hidden;
+  height: 8px;
+  border-radius: 999px;
+  background: #e8effc;
+}
+
+.study-progress-track i {
+  display: block;
+  width: 0;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #2457ff, #7d45ff);
+}
+
+.study-progress-card button {
+  justify-self: start;
+  min-height: 38px;
+  padding: 9px 12px;
+  border: 1px solid #c9d8ee;
+  border-radius: 8px;
+  background: #f9fbff;
+  color: #2347a3;
+  font-weight: 900;
+}
+
+.study-progress-card small {
+  color: #6b7890;
+  line-height: 1.5;
 }
 
 .reader-head {

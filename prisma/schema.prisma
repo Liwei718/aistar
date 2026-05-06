@@ -112,6 +112,7 @@ model User {
   badges          UserBadge[]
   recommendations Recommendation[]
   sessions        UserSession[]
+  book_progress   UserBookProgress[]
 
   @@index([school_stage, grade])
   @@index([status])
@@ -705,6 +706,100 @@ model ProjectRankingItem {
   @@id([ranking_id, project_id])
   @@unique([ranking_id, rank_no])
   @@map("project_ranking_items")
+}
+
+model AiBook {
+  id              String        @id @default(uuid()) @db.Uuid
+  title           String        @db.VarChar(160)
+  subtitle        String?       @db.VarChar(200)
+  slug            String        @unique @db.VarChar(180)
+  description     String?
+  cover_image_url String?
+  pdf_url         String?
+  school_stage    SchoolStage?
+  min_grade       Int?          @db.SmallInt
+  max_grade       Int?          @db.SmallInt
+  status          PublishStatus @default(draft)
+  sort_order      Int           @default(0)
+  metadata        Json?
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime?     @db.Timestamptz(6)
+
+  chapters AiBookChapter[]
+  tasks    AiBookTask[]
+  progress UserBookProgress[]
+
+  @@index([status, sort_order])
+  @@index([school_stage, min_grade, max_grade])
+  @@index([deleted_at])
+  @@map("ai_books")
+}
+
+model AiBookChapter {
+  id          String        @id @default(uuid()) @db.Uuid
+  book_id     String        @db.Uuid
+  chapter_no  Int
+  title       String        @db.VarChar(180)
+  summary     String?
+  key_points  Json?
+  status      PublishStatus @default(draft)
+  sort_order  Int           @default(0)
+  created_at  DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime      @updatedAt @db.Timestamptz(6)
+
+  book     AiBook             @relation(fields: [book_id], references: [id], onDelete: Cascade)
+  tasks    AiBookTask[]
+  progress UserBookProgress[]
+
+  @@unique([book_id, chapter_no])
+  @@index([book_id, status, sort_order])
+  @@map("ai_book_chapters")
+}
+
+model AiBookTask {
+  id          String        @id @default(uuid()) @db.Uuid
+  book_id     String        @db.Uuid
+  chapter_id  String?       @db.Uuid
+  task_type   String        @db.VarChar(64)
+  title       String        @db.VarChar(180)
+  description String?
+  prompt      String?
+  status      PublishStatus @default(draft)
+  sort_order  Int           @default(0)
+  created_at  DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime      @updatedAt @db.Timestamptz(6)
+
+  book    AiBook         @relation(fields: [book_id], references: [id], onDelete: Cascade)
+  chapter AiBookChapter? @relation(fields: [chapter_id], references: [id], onDelete: SetNull)
+
+  @@index([book_id, status, sort_order])
+  @@index([chapter_id])
+  @@map("ai_book_tasks")
+}
+
+model UserBookProgress {
+  id               String    @id @default(uuid()) @db.Uuid
+  user_id          String    @db.Uuid
+  book_id          String    @db.Uuid
+  chapter_id       String?   @db.Uuid
+  progress_percent Int       @default(0) @db.SmallInt
+  status           String    @default("not_started") @db.VarChar(32)
+  last_read_at     DateTime? @db.Timestamptz(6)
+  completed_at     DateTime? @db.Timestamptz(6)
+  notes            String?
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @updatedAt @db.Timestamptz(6)
+
+  user    User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  book    AiBook         @relation(fields: [book_id], references: [id], onDelete: Cascade)
+  chapter AiBookChapter? @relation(fields: [chapter_id], references: [id], onDelete: SetNull)
+
+  @@unique([user_id, book_id, chapter_id])
+  @@index([user_id, status])
+  @@index([book_id])
+  @@index([last_read_at])
+  @@map("user_book_progress")
 }
 
 model RecommendationRule {

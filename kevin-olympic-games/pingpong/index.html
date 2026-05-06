@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>KEVIN'S OLYMPIC</title>
+<script src="../olympic-tracker.js"></script>
 <script>
 if (window.self !== window.top) document.documentElement.classList.add('is-embedded');
 </script>
@@ -392,6 +393,12 @@ function processEffects(p){Object.keys(p.effects).forEach(k=>{if(p.effects[k]){p
 
 function endRound(winner){
   running=false;
+  window.reportOlympicGameResult?.({
+    game_slug:'table-tennis-championship',
+    score:p1.score,
+    max_score:RS,
+    metadata:{result:winner===1?(level>=ML-1?'champion':'win'):'loss',level:level+1,player_score:p1.score,opponent_score:p2.score,opponent:SUSPECTS[level].name}
+  });
   if(winner===1&&level<ML-1){
     winMsg.style.display='block';
     winMsg.innerHTML=`🏆 ${SUSPECTS[level].name} DEFEATED!<br>Prize: ${SUSPECTS[level].reward}`;

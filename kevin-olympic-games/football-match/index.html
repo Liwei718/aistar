@@ -65,6 +65,7 @@ canvas{width:100%;height:100%;display:block;border-radius:6px}
 <div id="controls">WASD/Arrows = Move &nbsp;| Z = Pass &nbsp;| X = Shoot &nbsp;| C = Switch &nbsp;| Shift = Sprint &nbsp;| Touch = Joystick+Buttons</div>
 </div>
 
+<script src="../olympic-tracker.js"></script>
 <script>
 const C=document.getElementById('c'),X=C.getContext('2d');
 const FW=960,FH=600;C.width=FW;C.height=FH;
@@ -631,6 +632,13 @@ function goalScored(who){
 function endMatch(){
   running=false;
   resultMsg.style.display='block';
+  const result=scoreK>scoreO?(matchIdx>=OPPONENTS.length-1?'champion':'win'):(scoreK===scoreO?'draw':'loss');
+  window.reportOlympicGameResult?.({
+    game_slug:'football-championship',
+    score:scoreK,
+    max_score:Math.max(scoreK,scoreO),
+    metadata:{result,opponent:OPPONENTS[matchIdx].name,player_score:scoreK,opponent_score:scoreO}
+  });
   if(scoreK>scoreO){
     if(matchIdx>=OPPONENTS.length-1){
       resultMsg.innerHTML=`🥇 OLYMPIC CHAMPION!<br>Kevin ${scoreK} — ${scoreO} ${OPPONENTS[matchIdx].name}<br>👑 Gold Medal!`;

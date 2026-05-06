@@ -217,63 +217,289 @@ async function main() {
     });
   }
 
+  const aiBook = await prisma.aiBook.upsert({
+    where: { slug: "ai-magic-with-dad" },
+    update: {
+      title: "解锁 AI 魔法",
+      subtitle: "和爸爸一起走进智能未来",
+      description: "适合亲子共读，用生活化问题理解人工智能、模型、提示词和未来能力。",
+      cover_image_url: "./assets/ai-magic-cover.png",
+      pdf_url: "./docs/解锁ai魔法-和爸爸一起走进智能未来.pdf",
+      school_stage: "general",
+      min_grade: 4,
+      max_grade: 9,
+      status: "published",
+      sort_order: 1,
+      metadata: {
+        reading_minutes: 90,
+        audience: "小学高年级到初中",
+        theme: "AI 启蒙"
+      }
+    },
+    create: {
+      title: "解锁 AI 魔法",
+      subtitle: "和爸爸一起走进智能未来",
+      slug: "ai-magic-with-dad",
+      description: "适合亲子共读，用生活化问题理解人工智能、模型、提示词和未来能力。",
+      cover_image_url: "./assets/ai-magic-cover.png",
+      pdf_url: "./docs/解锁ai魔法-和爸爸一起走进智能未来.pdf",
+      school_stage: "general",
+      min_grade: 4,
+      max_grade: 9,
+      status: "published",
+      sort_order: 1,
+      metadata: {
+        reading_minutes: 90,
+        audience: "小学高年级到初中",
+        theme: "AI 启蒙"
+      }
+    }
+  });
+
+  const aiChapters = [
+    {
+      chapter_no: 1,
+      title: "先理解 AI 是什么",
+      summary: "把 AI 看成一种会从大量例子里总结规律的工具。它不是魔法师，而是能帮我们观察、分类、生成和推理的智能伙伴。",
+      key_points: ["模式识别", "数据", "智能工具"]
+    },
+    {
+      chapter_no: 2,
+      title: "学习怎么和 AI 对话",
+      summary: "好问题会带来好答案。学习描述目标、补充背景、给出限制条件，是使用 AI 的第一项核心能力。",
+      key_points: ["提示词", "背景信息", "限制条件"]
+    },
+    {
+      chapter_no: 3,
+      title: "练习判断 AI 的答案",
+      summary: "AI 可能会答错，也可能遗漏信息。读者需要学会追问、核对来源、比较不同答案，并保留自己的判断。",
+      key_points: ["追问", "核实", "独立判断"]
+    },
+    {
+      chapter_no: 4,
+      title: "把 AI 用到学习和创造里",
+      summary: "可以让 AI 帮忙解释知识点、设计小游戏、整理读书笔记、生成创意草稿，但最后的理解和作品要由自己完成。",
+      key_points: ["学习助手", "创造", "作品意识"]
+    }
+  ];
+
+  for (const chapter of aiChapters) {
+    await prisma.aiBookChapter.upsert({
+      where: {
+        book_id_chapter_no: {
+          book_id: aiBook.id,
+          chapter_no: chapter.chapter_no
+        }
+      },
+      update: {
+        title: chapter.title,
+        summary: chapter.summary,
+        key_points: chapter.key_points,
+        status: "published",
+        sort_order: chapter.chapter_no
+      },
+      create: {
+        book_id: aiBook.id,
+        chapter_no: chapter.chapter_no,
+        title: chapter.title,
+        summary: chapter.summary,
+        key_points: chapter.key_points,
+        status: "published",
+        sort_order: chapter.chapter_no
+      }
+    });
+  }
+
+  const firstChapter = await prisma.aiBookChapter.findFirst({
+    where: { book_id: aiBook.id, chapter_no: 1 }
+  });
+
+  const aiTasks = [
+    {
+      task_type: "keyword",
+      title: "写下 3 个关键词",
+      description: "读完一节后，用自己的话写下 3 个关键词。",
+      prompt: "这节里哪三个词最重要？为什么？"
+    },
+    {
+      task_type: "prompt",
+      title: "改写一个更清楚的问题",
+      description: "向 AI 提一个更清楚的问题，再比较两次回答。",
+      prompt: "把一个模糊问题改成有目标、有背景、有要求的问题。"
+    },
+    {
+      task_type: "verify",
+      title: "找出需要核实的地方",
+      description: "找出一个 AI 回答里需要核实的地方。",
+      prompt: "这段回答里哪句话需要查来源？"
+    },
+    {
+      task_type: "card",
+      title: "做成学习卡片",
+      description: "把本章内容做成一张学习卡片。",
+      prompt: "用一句话解释本章，再配一个生活例子。"
+    }
+  ];
+
+  for (const [index, task] of aiTasks.entries()) {
+    await prisma.aiBookTask.upsert({
+      where: {
+        id: `00000000-0000-0000-0000-00000000040${index + 1}`
+      },
+      update: {
+        book_id: aiBook.id,
+        chapter_id: firstChapter?.id ?? null,
+        task_type: task.task_type,
+        title: task.title,
+        description: task.description,
+        prompt: task.prompt,
+        status: "published",
+        sort_order: index + 1
+      },
+      create: {
+        id: `00000000-0000-0000-0000-00000000040${index + 1}`,
+        book_id: aiBook.id,
+        chapter_id: firstChapter?.id ?? null,
+        task_type: task.task_type,
+        title: task.title,
+        description: task.description,
+        prompt: task.prompt,
+        status: "published",
+        sort_order: index + 1
+      }
+    });
+  }
+
+  await prisma.userBookProgress.upsert({
+    where: {
+      user_id_book_id_chapter_id: {
+        user_id: user.id,
+        book_id: aiBook.id,
+        chapter_id: firstChapter?.id ?? null
+      }
+    },
+    update: {
+      progress_percent: 25,
+      status: "reading",
+      last_read_at: new Date()
+    },
+    create: {
+      user_id: user.id,
+      book_id: aiBook.id,
+      chapter_id: firstChapter?.id ?? null,
+      progress_percent: 25,
+      status: "reading",
+      last_read_at: new Date()
+    }
+  });
+
   await prisma.game.updateMany({
     where: { slug: "gravity-orbit-challenge" },
     data: { status: "offline" }
   });
 
-  const game = await prisma.game.upsert({
-    where: { slug: "table-tennis-championship" },
-    update: {
-      name: "乒乓球冠军赛",
-      description: "移动球拍、抓住反弹节奏，连续击败挑战者。",
-      game_type: "sports",
-      school_stage: "middle",
-      min_grade: 4,
-      max_grade: 9,
-      subject: "science",
-      difficulty: "normal",
-      entry_url: "/kevin-olympic-games/pingpong/index.html",
-      status: "published"
+  const gameSeeds = [
+    {
+      name: "足球冠军赛",
+      slug: "football-championship",
+      description: "5v5 对抗，带球、传球、射门，赢下整场比赛。",
+      entry_url: "/kevin-olympic-games/football-match/index.html",
+      level_name: "冠军赛"
     },
-    create: {
+    {
+      name: "守门员挑战",
+      slug: "goalkeeper-challenge",
+      description: "判断射门方向，移动和起跳，把球扑出去。",
+      entry_url: "/kevin-olympic-games/goalkeeper/index.html",
+      level_name: "扑救挑战"
+    },
+    {
+      name: "点球大战",
+      slug: "penalty-shootout",
+      description: "瞄准、蓄力、射门，和对手轮流决胜。",
+      entry_url: "/kevin-olympic-games/penalty-shootout/index.html",
+      level_name: "罚球点"
+    },
+    {
       name: "乒乓球冠军赛",
       slug: "table-tennis-championship",
       description: "移动球拍、抓住反弹节奏，连续击败挑战者。",
-      game_type: "sports",
-      school_stage: "middle",
-      min_grade: 4,
-      max_grade: 9,
-      subject: "science",
-      difficulty: "normal",
       entry_url: "/kevin-olympic-games/pingpong/index.html",
-      status: "published"
-    }
-  });
-
-  await prisma.gameLevel.upsert({
-    where: { game_id_level_no: { game_id: game.id, level_no: 1 } },
-    update: { name: "挑战者赛" },
-    create: {
-      game_id: game.id,
-      level_no: 1,
-      name: "挑战者赛",
-      description: "移动球拍接住来球，观察节奏并连续得分。",
-      difficulty: "easy",
-      config: { targetHits: 10, medal: "bronze" }
-    }
-  });
-
-  await prisma.gameKnowledgePoint.upsert({
-    where: {
-      game_id_knowledge_point_id: {
-        game_id: game.id,
-        knowledge_point_id: knowledgePoint.id
-      }
+      level_name: "挑战者赛"
     },
-    update: {},
-    create: { game_id: game.id, knowledge_point_id: knowledgePoint.id }
-  });
+    {
+      name: "游泳竞速",
+      slug: "swimming-race",
+      description: "掌握节奏和体力，在泳道里冲向终点。",
+      entry_url: "/kevin-olympic-games/swimming/index.html",
+      level_name: "泳道竞速"
+    }
+  ];
+
+  let featuredGame = null;
+  for (const item of gameSeeds) {
+    const game = await prisma.game.upsert({
+      where: { slug: item.slug },
+      update: {
+        name: item.name,
+        description: item.description,
+        game_type: "sports",
+        school_stage: "middle",
+        min_grade: 4,
+        max_grade: 9,
+        subject: "science",
+        difficulty: "normal",
+        entry_url: item.entry_url,
+        status: "published"
+      },
+      create: {
+        name: item.name,
+        slug: item.slug,
+        description: item.description,
+        game_type: "sports",
+        school_stage: "middle",
+        min_grade: 4,
+        max_grade: 9,
+        subject: "science",
+        difficulty: "normal",
+        entry_url: item.entry_url,
+        status: "published"
+      }
+    });
+
+    if (item.slug === "table-tennis-championship") {
+      featuredGame = game;
+    }
+
+    await prisma.gameLevel.upsert({
+      where: { game_id_level_no: { game_id: game.id, level_no: 1 } },
+      update: {
+        name: item.level_name,
+        description: item.description,
+        difficulty: "easy",
+        config: { medal: "bronze" }
+      },
+      create: {
+        game_id: game.id,
+        level_no: 1,
+        name: item.level_name,
+        description: item.description,
+        difficulty: "easy",
+        config: { medal: "bronze" }
+      }
+    });
+
+    await prisma.gameKnowledgePoint.upsert({
+      where: {
+        game_id_knowledge_point_id: {
+          game_id: game.id,
+          knowledge_point_id: knowledgePoint.id
+        }
+      },
+      update: {},
+      create: { game_id: game.id, knowledge_point_id: knowledgePoint.id }
+    });
+  }
 
   const rule = await prisma.recommendationRule.upsert({
     where: { id: "00000000-0000-0000-0000-000000000001" },
