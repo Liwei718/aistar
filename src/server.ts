@@ -102,6 +102,11 @@ const demoFrontierItems = [
     title: "多模态模型正在学习同时理解文字、图片和声音",
     summary: "AI 不只是读文字，还能把图片、声音和文字放在一起判断。它像一个会看图、听课、做笔记的学习助手，但仍需要我们验证来源。",
     related_knowledge: "信息与信息处理",
+    grade_band: "小学高年级到初中",
+    why_it_matters: "它能帮助学生理解 AI 如何处理不同形式的信息，也提醒我们不要盲信模型输出。",
+    source_name: "示例来源",
+    source_url: "https://example.com/ai-frontier",
+    published_at: new Date().toISOString(),
     href: "./frontier.html"
   },
   {
@@ -110,6 +115,11 @@ const demoFrontierItems = [
     title: "仿生机器人用鱼类动作提升水下稳定性",
     summary: "研究者模仿鱼尾摆动，让机器人在复杂水流中更灵活地转向，和科学课里的力与运动有关。",
     related_knowledge: "力与运动",
+    grade_band: "小学高年级到初中",
+    why_it_matters: "仿生设计能把生物观察变成工程方案，适合连接科学探究和机器人学习。",
+    source_name: "示例来源",
+    source_url: "https://example.com/robotics-frontier",
+    published_at: new Date().toISOString(),
     href: "./frontier.html"
   },
   {
@@ -118,6 +128,11 @@ const demoFrontierItems = [
     title: "新观测数据帮助理解早期星系形成",
     summary: "望远镜看到的古老光线，能帮助我们理解宇宙早期发生了什么，也让光年和宇宙年龄变得更具体。",
     related_knowledge: "宇宙与天体",
+    grade_band: "初中以上",
+    why_it_matters: "太空观测能把课本里的光年、星系和宇宙演化变成真实问题。",
+    source_name: "示例来源",
+    source_url: "https://example.com/space-frontier",
+    published_at: new Date().toISOString(),
     href: "./frontier.html"
   }
 ];
@@ -199,6 +214,54 @@ function contentHref(contentType: string) {
   };
 
   return hrefs[contentType] ?? "./index.html#recommend";
+}
+
+function metadataOf(value: unknown) {
+  return value && typeof value === "object" ? value as Record<string, unknown> : {};
+}
+
+function categoryOf(metadata: Record<string, unknown>, fallback = "ai") {
+  return typeof metadata.category === "string" ? metadata.category : fallback;
+}
+
+function gradeBandOf(metadata: Record<string, unknown>) {
+  return typeof metadata.grade_band === "string" ? metadata.grade_band : "小学高年级到初中";
+}
+
+function whyItMattersOf(metadata: Record<string, unknown>) {
+  return typeof metadata.why_it_matters === "string" ? metadata.why_it_matters : "这条前沿内容可以帮助你把课内知识和真实世界的新变化联系起来。";
+}
+
+function frontierItemFromContent(item: {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string | null;
+  body?: string;
+  subject: string | null;
+  source_name: string | null;
+  source_url: string | null;
+  published_at: Date | null;
+  metadata: unknown;
+  knowledge_points?: Array<{ knowledge_point: { name: string } }>;
+}) {
+  const metadata = metadataOf(item.metadata);
+
+  return {
+    id: item.id,
+    slug: item.slug,
+    category: categoryOf(metadata, item.subject || "ai"),
+    title: item.title,
+    summary: item.summary,
+    body: item.body,
+    related_knowledge: item.knowledge_points?.[0]?.knowledge_point.name || metadata.related_knowledge || "科学素养",
+    grade_band: gradeBandOf(metadata),
+    why_it_matters: whyItMattersOf(metadata),
+    source_name: item.source_name,
+    source_url: item.source_url,
+    published_at: item.published_at,
+    href: "./frontier.html"
+  };
 }
 
 function normalizeHermesBaseUrl() {
@@ -438,6 +501,10 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/knowledge-points", description: "已发布知识点列表" },
       { method: "GET", path: "/api/games", description: "已发布小游戏列表" },
       { method: "GET", path: "/api/home/summary", description: "首页运营位摘要" },
+      { method: "GET", path: "/api/frontier/summary", description: "今日前沿首页摘要" },
+      { method: "GET", path: "/api/frontier/items", description: "今日前沿完整列表" },
+      { method: "GET", path: "/api/frontier/today-news", description: "今日前沿当天新闻" },
+      { method: "GET", path: "/api/frontier/items/:id", description: "今日前沿详情" },
       { method: "POST", path: "/api/contact-messages", description: "提交联系留言" },
       { method: "POST", path: "/api/game-records", description: "写入用户游戏记录" },
       { method: "GET", path: "/api/recommendations/:userId", description: "获取用户推荐结果" }
@@ -661,9 +728,7 @@ app.get("/api/home/summary", async (req, res, next) => {
     const frontierSummary = frontierContents.length
       ? frontierContents.map((item) => ({
           id: item.id,
-          category: item.metadata && typeof item.metadata === "object" && "category" in item.metadata
-            ? String((item.metadata as Record<string, unknown>).category)
-            : item.subject || "ai",
+          category: categoryOf(metadataOf(item.metadata), item.subject || "ai"),
           title: item.title,
           summary: item.summary,
           related_knowledge: item.knowledge_points[0]?.knowledge_point.name,
@@ -730,6 +795,159 @@ app.post("/api/contact-messages", async (req, res, next) => {
         error: "database_unavailable",
         message: "留言保存需要先启动 PostgreSQL 并执行 Prisma 迁移。"
       });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/frontier/summary", async (_req, res, next) => {
+  try {
+    const items = await prisma.content.findMany({
+      where: {
+        status: "published",
+        deleted_at: null,
+        content_type: "frontier_news"
+      },
+      orderBy: [{ published_at: "desc" }, { created_at: "desc" }],
+      take: 3,
+      include: {
+        knowledge_points: { include: { knowledge_point: true } }
+      }
+    });
+
+    res.json(jsonSafe({
+      data: items.length ? items.map(frontierItemFromContent) : demoFrontierItems,
+      mode: items.length ? "live" : "demo"
+    }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.json({ data: demoFrontierItems, mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/frontier/items", async (req, res, next) => {
+  try {
+    const query = listQuerySchema
+      .extend({
+        category: z.string().optional(),
+        grade: z.coerce.number().int().min(1).max(12).optional()
+      })
+      .parse(req.query);
+
+    const items = await prisma.content.findMany({
+      where: {
+        status: "published",
+        deleted_at: null,
+        content_type: "frontier_news",
+        ...(query.grade
+          ? {
+              OR: [
+                { min_grade: null },
+                { min_grade: { lte: query.grade } }
+              ],
+              AND: [
+                {
+                  OR: [
+                    { max_grade: null },
+                    { max_grade: { gte: query.grade } }
+                  ]
+                }
+              ]
+            }
+          : {})
+      },
+      orderBy: [{ published_at: "desc" }, { created_at: "desc" }],
+      take: query.limit,
+      skip: query.offset,
+      include: {
+        knowledge_points: { include: { knowledge_point: true } }
+      }
+    });
+
+    const data = items
+      .map(frontierItemFromContent)
+      .filter((item) => !query.category || query.category === "all" || item.category === query.category);
+
+    res.json(jsonSafe({
+      data: data.length ? data : demoFrontierItems.filter((item) => !query.category || query.category === "all" || item.category === query.category),
+      mode: data.length ? "live" : "demo"
+    }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.json({ data: demoFrontierItems, mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/frontier/today-news", async (_req, res, next) => {
+  try {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const items = await prisma.content.findMany({
+      where: {
+        status: "published",
+        deleted_at: null,
+        content_type: "frontier_news",
+        published_at: { gte: startOfToday }
+      },
+      orderBy: [{ published_at: "desc" }, { created_at: "desc" }],
+      take: 6,
+      include: {
+        knowledge_points: { include: { knowledge_point: true } }
+      }
+    });
+
+    res.json(jsonSafe({
+      data: items.length ? items.map(frontierItemFromContent) : demoFrontierItems,
+      mode: items.length ? "live" : "demo"
+    }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.json({ data: demoFrontierItems, mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/frontier/items/:id", async (req, res, next) => {
+  try {
+    const params = z.object({ id: z.string() }).parse(req.params);
+    const item = await prisma.content.findFirst({
+      where: {
+        OR: [
+          z.string().uuid().safeParse(params.id).success ? { id: params.id } : undefined,
+          { slug: params.id }
+        ].filter(Boolean) as Array<{ id?: string; slug?: string }>,
+        status: "published",
+        deleted_at: null,
+        content_type: "frontier_news"
+      },
+      include: {
+        knowledge_points: { include: { knowledge_point: true } }
+      }
+    });
+
+    if (!item) {
+      res.status(404).json({ error: "not_found", message: "未找到这条前沿内容" });
+      return;
+    }
+
+    res.json(jsonSafe({ data: frontierItemFromContent(item) }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "读取详情需要数据库连接。" });
       return;
     }
 

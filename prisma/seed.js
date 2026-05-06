@@ -120,6 +120,103 @@ async function main() {
     }
   });
 
+  const frontierSeeds = [
+    {
+      slug: "frontier-multimodal-ai",
+      title: "多模态模型正在学习同时理解文字、图片和声音",
+      summary: "AI 不只是读文字，还能把图片、声音和文字放在一起判断。它像一个会看图、听课、做笔记的学习助手，但仍需要我们验证来源。",
+      body: "多模态模型把文字、图像、声音等信息一起处理。对中小学生来说，可以先把它理解为一个会同时看图、听声音、读文字的工具。它很有用，但仍然可能犯错，所以学习 AI 时也要学习如何检查来源、比较证据和判断答案是否可靠。",
+      subject: "ai",
+      source_name: "OpenAI Blog",
+      source_url: "https://openai.com/news/",
+      metadata: {
+        category: "ai",
+        grade_band: "小学高年级到初中",
+        related_knowledge: "信息与信息处理",
+        why_it_matters: "它能帮助学生理解 AI 如何处理不同形式的信息，也提醒我们不要盲信模型输出。"
+      }
+    },
+    {
+      slug: "frontier-bionic-robot-fish",
+      title: "仿生机器人用鱼类动作提升水下稳定性",
+      summary: "研究者模仿鱼尾摆动，让机器人在复杂水流中更灵活地转向，和科学课里的力与运动有关。",
+      body: "仿生机器人会从动物身上学习运动方式。比如模仿鱼尾摆动，可以让水下机器人更稳定地前进和转弯。这类研究把生物观察、力与运动、材料设计和控制算法联系在一起，很适合用来理解科学探究如何变成工程方案。",
+      subject: "science",
+      source_name: "MIT CSAIL",
+      source_url: "https://www.csail.mit.edu/news",
+      metadata: {
+        category: "robotics",
+        grade_band: "小学高年级到初中",
+        related_knowledge: "力与运动",
+        why_it_matters: "仿生设计能把生物观察变成工程方案，适合连接科学探究和机器人学习。"
+      }
+    },
+    {
+      slug: "frontier-early-galaxy-observation",
+      title: "新观测数据帮助理解早期星系形成",
+      summary: "望远镜看到的古老光线，能帮助我们理解宇宙早期发生了什么，也让光年和宇宙年龄变得更具体。",
+      body: "天文望远镜接收到的遥远星光，可能来自很久以前的宇宙。科学家通过分析这些光，推测早期星系如何形成。学生可以把这条新闻和光年、宇宙、星系、望远镜观测等知识联系起来理解。",
+      subject: "science",
+      source_name: "NASA Science",
+      source_url: "https://science.nasa.gov/",
+      metadata: {
+        category: "space",
+        grade_band: "初中以上",
+        related_knowledge: "宇宙与天体",
+        why_it_matters: "太空观测能把课本里的光年、星系和宇宙演化变成真实问题。"
+      }
+    }
+  ];
+
+  for (const item of frontierSeeds) {
+    const frontierContent = await prisma.content.upsert({
+      where: { slug: item.slug },
+      update: {
+        title: item.title,
+        summary: item.summary,
+        body: item.body,
+        subject: item.subject,
+        source_name: item.source_name,
+        source_url: item.source_url,
+        metadata: item.metadata,
+        status: "published",
+        published_at: new Date()
+      },
+      create: {
+        content_type: "frontier_news",
+        title: item.title,
+        slug: item.slug,
+        summary: item.summary,
+        body: item.body,
+        school_stage: "general",
+        min_grade: 5,
+        max_grade: 9,
+        subject: item.subject,
+        difficulty: "normal",
+        source_name: item.source_name,
+        source_url: item.source_url,
+        metadata: item.metadata,
+        status: "published",
+        published_at: new Date()
+      }
+    });
+
+    await prisma.contentKnowledgePoint.upsert({
+      where: {
+        content_id_knowledge_point_id: {
+          content_id: frontierContent.id,
+          knowledge_point_id: knowledgePoint.id
+        }
+      },
+      update: { relation_type: "related" },
+      create: {
+        content_id: frontierContent.id,
+        knowledge_point_id: knowledgePoint.id,
+        relation_type: "related"
+      }
+    });
+  }
+
   await prisma.game.updateMany({
     where: { slug: "gravity-orbit-challenge" },
     data: { status: "offline" }
