@@ -1010,6 +1010,7 @@ app.get("/", (_req, res) => {
         <li><a href="/api/contents">GET /api/contents</a>：已发布内容列表，需要数据库连接</li>
         <li><a href="/api/knowledge-points">GET /api/knowledge-points</a>：知识点列表，需要数据库连接</li>
         <li><a href="/api/games">GET /api/games</a>：小游戏列表，需要数据库连接</li>
+        <li><a href="/api/games/leaderboard">GET /api/games/leaderboard</a>：小游戏排行榜，需要数据库连接</li>
       </ul>
     </main>
   </body>
@@ -1028,6 +1029,7 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/knowledge-points/:id", description: "知识点详情" },
       { method: "POST", path: "/api/knowledge-points/:id/progress", description: "保存当前用户知识点学习进度" },
       { method: "GET", path: "/api/games", description: "已发布小游戏列表" },
+      { method: "GET", path: "/api/games/leaderboard", description: "小游戏排行榜，支持 game_slug 和 limit" },
       { method: "GET", path: "/api/home/summary", description: "首页运营位摘要" },
       { method: "GET", path: "/api/users/me/growth", description: "当前用户学习成长汇总" },
       { method: "GET", path: "/api/frontier/summary", description: "今日前沿首页摘要" },
@@ -2139,6 +2141,112 @@ app.get("/api/games", async (req, res, next) => {
   } catch (error) {
     if (isDatabaseConnectionError(error)) {
       res.json({ data: [demoGame], mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/games/leaderboard", async (req, res, next) => {
+  try {
+    const query = z
+      .object({
+        game_slug: z.string().max(180).optional(),
+        limit: z.coerce.number().int().min(1).max(50).default(10)
+      })
+      .parse(req.query);
+
+    const records = await prisma.gameRecord.findMany({
+      where: {
+        status: "completed",
+        game: {
+          status: "published",
+          deleted_at: null,
+          ...(query.game_slug ? { slug: query.game_slug } : {})
+        }
+      },
+      orderBy: [
+        { score: "desc" },
+        { completed_at: "asc" },
+        { created_at: "asc" }
+      ],
+      take: 300,
+      include: {
+        user: {
+          select: {
+            id: true,
+            nickname: true,
+            avatar_url: true,
+            school_stage: true,
+            grade: true
+          }
+        },
+        game: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            entry_url: true
+          }
+        }
+      }
+    });
+
+    const bestByUserAndGame = new Map<string, (typeof records)[number]>();
+    for (const record of records) {
+      const key = `${record.game_id}:${record.user_id}`;
+      const current = bestByUserAndGame.get(key);
+      const recordDuration = record.duration_seconds ?? Number.MAX_SAFE_INTEGER;
+      const currentDuration = current?.duration_seconds ?? Number.MAX_SAFE_INTEGER;
+      const recordScore = record.score ?? 0;
+      const currentScore = current?.score ?? 0;
+
+      if (
+        !current ||
+        recordScore > currentScore ||
+        (recordScore === currentScore && recordDuration < currentDuration)
+      ) {
+        bestByUserAndGame.set(key, record);
+      }
+    }
+
+    const rankedRecords = Array.from(bestByUserAndGame.values())
+      .sort((left, right) => {
+        const scoreDiff = (right.score ?? 0) - (left.score ?? 0);
+        if (scoreDiff !== 0) return scoreDiff;
+        const durationDiff = (left.duration_seconds ?? Number.MAX_SAFE_INTEGER) - (right.duration_seconds ?? Number.MAX_SAFE_INTEGER);
+        if (durationDiff !== 0) return durationDiff;
+        return (left.completed_at?.getTime() ?? left.created_at.getTime()) - (right.completed_at?.getTime() ?? right.created_at.getTime());
+      })
+      .slice(0, query.limit)
+      .map((record, index) => {
+        const metadata = record.metadata && typeof record.metadata === "object" && !Array.isArray(record.metadata)
+          ? record.metadata as Record<string, unknown>
+          : {};
+
+        return {
+          rank: index + 1,
+          id: record.id,
+          game: record.game,
+          player: {
+            nickname: record.user.nickname,
+            avatar_url: record.user.avatar_url,
+            school_stage: record.user.school_stage,
+            grade: record.user.grade
+          },
+          score: record.score,
+          max_score: record.max_score,
+          duration_seconds: record.duration_seconds,
+          completed_at: record.completed_at,
+          result: typeof metadata.result === "string" ? metadata.result : null
+        };
+      });
+
+    res.json(jsonSafe({ data: rankedRecords }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.json({ data: [], mode: "demo", warning: "database_unavailable" });
       return;
     }
 

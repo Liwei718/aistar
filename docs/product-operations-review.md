@@ -26,7 +26,7 @@
 | 中小学知识 | `knowledge.html` + `knowledge.js` | `/api/knowledge-points`、`/api/knowledge-points/:id`、`/api/knowledge-points/:id/progress` | 已完成动态化第一版 | 已有详情、视频、任务和学习进度，下一步扩充题库和真实视频源 |
 | AI 学习 | `ai-learning.html` | 已接入书籍、章节、任务和阅读进度接口 | 静态 PDF + 导读 + 进度 | 适合做首个高质量内容产品，后续可扩展更多书籍和徽章 |
 | Hermes 对话 | `hermes.html` + `hermes.js` | `/api/hermes/status`、`/api/hermes/chat` | 已接入 | 本机能力已跑通，可作为特色功能，但需要安全边界和使用提示 |
-| 奥林匹克小游戏 | `games.html` + 游戏目录 | `/api/games`、`/api/game-records`、`/api/users/me/growth` | 已完成成绩记录第一版 | 游戏完成可写入成绩并触发学习天数、知识点和徽章，下一步做排行榜 |
+| 奥林匹克小游戏 | `games.html` + `games.js` + 游戏目录 | `/api/games`、`/api/game-records`、`/api/games/leaderboard`、`/api/users/me/growth` | 已完成成绩记录和排行榜第一版 | 游戏完成可写入成绩并触发成长数据，榜单可拉动复玩，下一步做赛季和周榜 |
 | 科学人物 | `scientists.html`、`scientist-detail.html` | `/api/scientists`、`/api/scientists/:id` | 已完成动态化第一版 | 人物列表和详情已接后端，下一步做后台录入和知识点关联 |
 | 联系我 | `contact.html` | 数据模型未明确接入接口 | 静态本地提示 | 邮箱清晰，但表单留言没有真正保存和通知 |
 
@@ -259,6 +259,7 @@ AI 生成介绍、学习价值、改造任务
 
 - 根据年级、兴趣、学习行为生成推荐。
 - 已完成第一版：增加知识点详情、视频、学习任务和进度保存。
+- 已完成第一版：奥林匹克小游戏排行榜按游戏展示 Top 10，同一用户同一游戏只展示最好成绩，并且默认只展示昵称、头像和年级。
 - 建立徽章规则，例如“连续 3 天学习”“完成 5 个知识点”“赢得乒乓球冠军赛”。
 - 增加内容收藏、继续学习、最近学习记录。
 - 增加运营后台首页看板。
@@ -304,6 +305,6 @@ postMessage 给父页面
 
 1. 用户成长体系：学习天数、连续学习、知识点、徽章真实接入。
 2. 今日前沿动态化：从后台数据到前台列表和首页摘要。
-3. 小游戏成绩记录：让 Kevin's Olympic Games 能贡献学习成长数据。
+3. 小游戏成绩记录与排行榜：让 Kevin's Olympic Games 能贡献学习成长数据，并用榜单促进复玩。
 
 这三个闭环一旦打通，网站就从“内容展示网站”开始变成“可运营的学习产品”。

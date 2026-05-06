@@ -16,6 +16,7 @@
 - 开源项目雷达动态化第一版：项目页已从后端读取当前周榜、历史榜单和项目详情数据。
 - AI 学习动态化第一版：AI 学习页已从后端读取书籍、章节、阅读任务，并支持登录用户保存阅读进度。
 - 奥林匹克小游戏成绩记录第一版：小游戏完成后可写入成绩，触发学习天数、知识点完成和徽章。
+- 奥林匹克小游戏排行榜第一版：每个游戏可读取 Top 10 成绩，同一用户同一游戏只展示最好成绩。
 - 中小学知识库动态化第一版：知识点列表、详情、视频、任务和学习进度已接入后端。
 - 科学人物动态化第一版：科学人物列表和详情已从后端 `contents` 表读取。
 
@@ -75,6 +76,7 @@ http://localhost:3001
 | GET | `/api/knowledge-points/:id` | 知识点详情，支持 ID 或 slug，返回图解步骤、视频和任务 |
 | POST | `/api/knowledge-points/:id/progress` | 保存当前登录用户的知识点进度 |
 | GET | `/api/games` | 已发布小游戏列表 |
+| GET | `/api/games/leaderboard` | 小游戏排行榜，支持 `game_slug` 和 `limit` |
 | GET | `/api/home/summary` | 首页运营位摘要，包括主推游戏、今日前沿、推荐卡片和学习概览 |
 | POST | `/api/contact-messages` | 保存联系留言 |
 | GET | `/api/frontier/summary` | 今日前沿首页摘要 |
@@ -132,9 +134,11 @@ AI 学习动态化：
 
 - 新增 `/api/users/me/growth`，聚合知识点进度、AI 书籍进度、小游戏成绩和徽章。
 - `/api/game-records` 支持登录用户通过 `game_slug` 上报成绩，后端自动识别用户并关联游戏。
+- 新增 `/api/games/leaderboard`，支持按 `game_slug` 读取排行榜；排行榜只返回昵称、头像、年级和成绩，不暴露邮箱、手机号等隐私信息。
 - 5 个 Kevin's Olympic 游戏页面接入 `kevin-olympic-games/olympic-tracker.js`，比赛结束时上报成绩。
 - 后端在小游戏完成后写入 `game_records`，同时更新关联知识点的 `learning_progress`。
 - 第一版徽章规则已接入：首次完成小游戏获得“奥林匹克初体验”，高光成绩获得“奥林匹克奖牌”，累计完成多个游戏获得“奥林匹克选手”。
+- `games.html` 新增 Kevin's Olympic 排行榜区域，支持足球、守门、点球、乒乓、游泳五个项目切换。
 - `prisma/seed.js` 已补齐足球冠军赛、守门员挑战、点球大战、乒乓球冠军赛、游泳竞速 5 个小游戏记录。
 
 中小学知识库动态化：

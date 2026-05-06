@@ -1419,6 +1419,161 @@ input[type="range"] {
     linear-gradient(160deg, #061d35, #0a6a84);
 }
 
+.olympic-leaderboard {
+  position: relative;
+  z-index: 1;
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid rgba(16, 32, 61, 0.1);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 16px 36px rgba(11, 32, 81, 0.12);
+}
+
+.leaderboard-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.leaderboard-head p {
+  margin-bottom: 5px;
+  color: #315fbd;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.leaderboard-head h2 {
+  margin: 0;
+  color: #10203d;
+  font-size: 24px;
+}
+
+.leaderboard-head span {
+  display: inline-flex;
+  min-height: 32px;
+  align-items: center;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: #eef4ff;
+  color: #315fbd;
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.leaderboard-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.leaderboard-tabs button {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(16, 32, 61, 0.12);
+  border-radius: 8px;
+  background: #fff;
+  color: #42526d;
+  font-weight: 850;
+}
+
+.leaderboard-tabs button.active,
+.leaderboard-tabs button:hover {
+  border-color: #2457ff;
+  background: #2457ff;
+  color: #fff;
+}
+
+.leaderboard-table {
+  display: grid;
+  gap: 8px;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 38px minmax(160px, 1fr) minmax(90px, 120px) minmax(130px, auto);
+  gap: 12px;
+  align-items: center;
+  min-height: 66px;
+  padding: 10px 12px;
+  border: 1px solid rgba(16, 32, 61, 0.08);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.leaderboard-row > strong {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: #10203d;
+  color: #fff;
+  font-size: 14px;
+}
+
+.leaderboard-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.leaderboard-player img,
+.leaderboard-player > span {
+  display: inline-grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #eef4ff;
+  color: #2457ff;
+  font-weight: 900;
+  object-fit: cover;
+}
+
+.leaderboard-player b,
+.leaderboard-score b {
+  display: block;
+  color: #10203d;
+  font-size: 15px;
+}
+
+.leaderboard-player small,
+.leaderboard-score small,
+.leaderboard-row time {
+  color: #6c788d;
+  font-size: 12px;
+}
+
+.leaderboard-score {
+  text-align: right;
+}
+
+.leaderboard-row time {
+  text-align: right;
+}
+
+.leaderboard-empty {
+  min-height: 74px;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  border: 1px dashed rgba(16, 32, 61, 0.18);
+  border-radius: 8px;
+  background: rgba(245, 248, 255, 0.8);
+  color: #52627a;
+  text-align: center;
+}
+
 .pong-game {
   margin-top: 74px;
   padding: 14px;
@@ -4391,6 +4546,7 @@ input[type="range"] {
   .frontier-news-grid,
   .project-top-list,
   .olympic-games-grid,
+  .leaderboard-row,
   .book-shelf,
   .knowledge-daily,
   .knowledge-map,
@@ -4573,6 +4729,7 @@ input[type="range"] {
   .news-row,
   .frontier-list,
   .olympic-games-grid,
+  .leaderboard-row,
   .book-shelf,
   .guide-grid,
   .mini-games-grid,
@@ -4591,6 +4748,16 @@ input[type="range"] {
 
   .games-header h1 {
     font-size: 30px;
+  }
+
+  .leaderboard-head {
+    display: grid;
+  }
+
+  .leaderboard-row,
+  .leaderboard-score,
+  .leaderboard-row time {
+    text-align: left;
   }
 
   .olympic-rings {

@@ -98,9 +98,32 @@
             <b>进入泳池</b>
           </a>
         </section>
+
+        <section class="olympic-leaderboard" aria-labelledby="leaderboard-title">
+          <div class="leaderboard-head">
+            <div>
+              <p>实时荣誉榜</p>
+              <h2 id="leaderboard-title">Kevin's Olympic 排行榜</h2>
+            </div>
+            <span id="leaderboardStatus">读取最新成绩中</span>
+          </div>
+
+          <div class="leaderboard-tabs" role="tablist" aria-label="选择小游戏排行榜">
+            <button class="active" type="button" data-game-slug="football-championship">足球</button>
+            <button type="button" data-game-slug="goalkeeper-challenge">守门</button>
+            <button type="button" data-game-slug="penalty-shootout">点球</button>
+            <button type="button" data-game-slug="table-tennis-championship">乒乓</button>
+            <button type="button" data-game-slug="swimming-race">游泳</button>
+          </div>
+
+          <div class="leaderboard-table" id="leaderboardTable" aria-live="polite">
+            <div class="leaderboard-empty">排行榜正在连接后端，完成一局游戏后就会留下成绩。</div>
+          </div>
+        </section>
       </section>
     </main>
 
     <script src="./app.js?v=20260507a"></script>
+    <script src="./games.js?v=20260507b"></script>
   </body>
 </html>
