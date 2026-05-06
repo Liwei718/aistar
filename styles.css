@@ -2933,6 +2933,16 @@ input[type="range"] {
   margin: 0;
 }
 
+.project-repo-link {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 14px;
+  color: var(--blue);
+  font-size: 14px;
+  font-weight: 950;
+  text-decoration: none;
+}
+
 .project-card.is-hidden {
   display: none;
 }

@@ -335,33 +335,173 @@ async function main() {
     }
   });
 
-  await prisma.openSourceProject.upsert({
-    where: { repo_url_hash: sha256("https://github.com/example/orbit-sim") },
-    update: {
-      status: "published",
-      stars: 128
-    },
-    create: {
+  const projectSeeds = [
+    {
       name: "Orbit Sim",
       slug: "orbit-sim",
       repo_url: "https://github.com/example/orbit-sim",
-      repo_url_hash: sha256("https://github.com/example/orbit-sim"),
       description: "一个用于理解轨道运动的开源模拟项目。",
       readme_summary: "适合学习基础物理模拟、Canvas 动画和参数调节。",
       stars: 128,
       forks: 24,
       language: "TypeScript",
       license: "MIT",
-      school_stage: "middle",
-      min_grade: 7,
-      max_grade: 9,
-      difficulty: "normal",
+      category: "science",
       learning_value: "学习速度、引力、轨道稳定和简单数值模拟。",
       recommend_reason: "主题和首页小游戏一致，适合边玩边改。",
-      remix_ideas: "增加不同星球质量、轨道预测线和关卡编辑器。",
-      status: "published"
+      remix_ideas: "增加不同星球质量、轨道预测线和关卡编辑器。"
+    },
+    {
+      name: "Mini Agent Studio",
+      slug: "mini-agent-studio",
+      repo_url: "https://github.com/example/mini-agent-studio",
+      description: "用简单流程搭建 AI 小助手。",
+      readme_summary: "适合理解提示词、工具调用和任务拆解。",
+      stars: 14200,
+      forks: 980,
+      language: "Python",
+      license: "Apache-2.0",
+      category: "ai",
+      learning_value: "学习 AI 助手如何拆解任务和调用工具。",
+      recommend_reason: "适合做自己的学习助手原型。",
+      remix_ideas: "改造成数学题解释助手或科学人物问答助手。"
+    },
+    {
+      name: "Physics Playground",
+      slug: "physics-playground",
+      repo_url: "https://github.com/example/physics-playground",
+      description: "浏览器里的物理小游戏模板。",
+      readme_summary: "可以改造成力学、碰撞和能量守恒实验。",
+      stars: 11900,
+      forks: 720,
+      language: "JavaScript",
+      license: "MIT",
+      category: "game",
+      learning_value: "学习碰撞检测、速度、加速度和能量变化。",
+      recommend_reason: "适合和奥林匹克小游戏联动。",
+      remix_ideas: "增加关卡、计分和知识点提示。"
+    },
+    {
+      name: "Learn Python by Building",
+      slug: "learn-python-by-building",
+      repo_url: "https://github.com/example/learn-python-by-building",
+      description: "通过小项目学习 Python。",
+      readme_summary: "适合从变量、函数和文件读写开始入门。",
+      stars: 8700,
+      forks: 640,
+      language: "Python",
+      license: "MIT",
+      category: "beginner",
+      learning_value: "用项目方式理解编程基础概念。",
+      recommend_reason: "适合零基础学生从做中学。",
+      remix_ideas: "增加中文任务卡和自动检查脚本。"
+    },
+    {
+      name: "Math Graph Lab",
+      slug: "math-graph-lab",
+      repo_url: "https://github.com/example/math-graph-lab",
+      description: "把函数、几何和统计图形画出来。",
+      readme_summary: "适合做课内数学知识的互动展示。",
+      stars: 6400,
+      forks: 390,
+      language: "TypeScript",
+      license: "MIT",
+      category: "science",
+      learning_value: "学习函数图像、数据可视化和交互设计。",
+      recommend_reason: "适合连接数学知识库。",
+      remix_ideas: "增加北师大版六年级和初一知识点模板。"
+    }
+  ];
+
+  const ranking = await prisma.projectRanking.upsert({
+    where: { id: "00000000-0000-0000-0000-000000000301" },
+    update: {
+      name: "2026 第 18 周开源项目增长榜",
+      description: "每周保存一次，展示适合学生试玩和改造的开源项目。",
+      enabled: true
+    },
+    create: {
+      id: "00000000-0000-0000-0000-000000000301",
+      name: "2026 第 18 周开源项目增长榜",
+      ranking_type: "weekly_growth",
+      description: "每周保存一次，展示适合学生试玩和改造的开源项目。",
+      enabled: true
     }
   });
+
+  for (const [index, item] of projectSeeds.entries()) {
+    const project = await prisma.openSourceProject.upsert({
+      where: { repo_url_hash: sha256(item.repo_url) },
+      update: {
+        name: item.name,
+        description: item.description,
+        readme_summary: item.readme_summary,
+        stars: item.stars,
+        forks: item.forks,
+        language: item.language,
+        license: item.license,
+        learning_value: item.learning_value,
+        recommend_reason: item.recommend_reason,
+        remix_ideas: item.remix_ideas,
+        metadata: { category: item.category, weekly_star_growth: item.stars },
+        status: "published"
+      },
+      create: {
+        name: item.name,
+        slug: item.slug,
+        repo_url: item.repo_url,
+        repo_url_hash: sha256(item.repo_url),
+        description: item.description,
+        readme_summary: item.readme_summary,
+        stars: item.stars,
+        forks: item.forks,
+        language: item.language,
+        license: item.license,
+        school_stage: "middle",
+        min_grade: 6,
+        max_grade: 9,
+        difficulty: item.category === "beginner" ? "easy" : "normal",
+        learning_value: item.learning_value,
+        recommend_reason: item.recommend_reason,
+        remix_ideas: item.remix_ideas,
+        metadata: { category: item.category, weekly_star_growth: item.stars },
+        status: "published"
+      }
+    });
+
+    await prisma.projectRankingItem.upsert({
+      where: {
+        ranking_id_project_id: {
+          ranking_id: ranking.id,
+          project_id: project.id
+        }
+      },
+      update: {
+        rank_no: index + 1,
+        reason: item.recommend_reason
+      },
+      create: {
+        ranking_id: ranking.id,
+        project_id: project.id,
+        rank_no: index + 1,
+        reason: item.recommend_reason
+      }
+    });
+
+    await prisma.projectKnowledgePoint.upsert({
+      where: {
+        project_id_knowledge_point_id: {
+          project_id: project.id,
+          knowledge_point_id: knowledgePoint.id
+        }
+      },
+      update: {},
+      create: {
+        project_id: project.id,
+        knowledge_point_id: knowledgePoint.id
+      }
+    });
+  }
 
   console.log("Seed data created.");
 }

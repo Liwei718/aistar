@@ -162,6 +162,24 @@ const demoHomeSummary = {
   }
 };
 
+const demoProjectItems = [
+  {
+    id: "demo-project-orbit",
+    rank_no: 1,
+    category: "science",
+    name: "Orbit Sim",
+    repo_url: "https://github.com/example/orbit-sim",
+    description: "一个用于理解轨道运动的开源模拟项目。",
+    stars: 128,
+    forks: 24,
+    language: "TypeScript",
+    license: "MIT",
+    learning_value: "学习速度、引力、轨道稳定和简单数值模拟。",
+    remix_ideas: "增加不同星球质量、轨道预测线和关卡编辑器。",
+    reason: "主题和首页小游戏一致，适合边玩边改。"
+  }
+];
+
 function isDatabaseConnectionError(error: unknown) {
   return error instanceof Error && /Can't reach database server|ECONNREFUSED|P1001|connect/i.test(error.message);
 }
@@ -261,6 +279,54 @@ function frontierItemFromContent(item: {
     source_url: item.source_url,
     published_at: item.published_at,
     href: "./frontier.html"
+  };
+}
+
+function projectCategoryOf(project: { metadata: unknown; language: string | null; difficulty: string | null }) {
+  const metadata = metadataOf(project.metadata);
+  if (typeof metadata.category === "string") return metadata.category;
+  if (project.difficulty === "easy") return "beginner";
+  if (project.language?.toLowerCase().includes("python")) return "ai";
+  return "science";
+}
+
+function projectItemFromRanking(item: {
+  rank_no: number;
+  reason: string | null;
+  project: {
+    id: string;
+    name: string;
+    slug: string;
+    repo_url: string;
+    description: string | null;
+    readme_summary: string | null;
+    stars: number | null;
+    forks: number | null;
+    language: string | null;
+    license: string | null;
+    difficulty: string | null;
+    learning_value: string | null;
+    recommend_reason: string | null;
+    remix_ideas: string | null;
+    metadata: unknown;
+  };
+}) {
+  return {
+    id: item.project.id,
+    slug: item.project.slug,
+    rank_no: item.rank_no,
+    category: projectCategoryOf(item.project),
+    name: item.project.name,
+    repo_url: item.project.repo_url,
+    description: item.project.readme_summary || item.project.description,
+    stars: item.project.stars,
+    forks: item.project.forks,
+    language: item.project.language,
+    license: item.project.license,
+    difficulty: item.project.difficulty,
+    learning_value: item.project.learning_value,
+    remix_ideas: item.project.remix_ideas,
+    reason: item.reason || item.project.recommend_reason
   };
 }
 
@@ -505,6 +571,9 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/frontier/items", description: "今日前沿完整列表" },
       { method: "GET", path: "/api/frontier/today-news", description: "今日前沿当天新闻" },
       { method: "GET", path: "/api/frontier/items/:id", description: "今日前沿详情" },
+      { method: "GET", path: "/api/projects/rankings/current", description: "当前开源项目周榜" },
+      { method: "GET", path: "/api/projects/rankings", description: "开源项目历史榜单" },
+      { method: "GET", path: "/api/projects/:id", description: "开源项目详情" },
       { method: "POST", path: "/api/contact-messages", description: "提交联系留言" },
       { method: "POST", path: "/api/game-records", description: "写入用户游戏记录" },
       { method: "GET", path: "/api/recommendations/:userId", description: "获取用户推荐结果" }
@@ -948,6 +1017,153 @@ app.get("/api/frontier/items/:id", async (req, res, next) => {
   } catch (error) {
     if (isDatabaseConnectionError(error)) {
       res.status(503).json({ error: "database_unavailable", message: "读取详情需要数据库连接。" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/projects/rankings/current", async (_req, res, next) => {
+  try {
+    const ranking = await prisma.projectRanking.findFirst({
+      where: {
+        enabled: true,
+        ranking_type: "weekly_growth"
+      },
+      orderBy: { created_at: "desc" },
+      include: {
+        items: {
+          orderBy: { rank_no: "asc" },
+          include: { project: true }
+        }
+      }
+    });
+
+    res.json(jsonSafe({
+      data: ranking
+        ? {
+            id: ranking.id,
+            name: ranking.name,
+            ranking_type: ranking.ranking_type,
+            description: ranking.description,
+            created_at: ranking.created_at,
+            items: ranking.items.map(projectItemFromRanking)
+          }
+        : {
+            id: "demo-project-ranking",
+            name: "示例开源项目周榜",
+            ranking_type: "weekly_growth",
+            description: "数据库暂无榜单时展示的示例数据。",
+            items: demoProjectItems
+          },
+      mode: ranking ? "live" : "demo"
+    }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.json({
+        data: {
+          id: "demo-project-ranking",
+          name: "示例开源项目周榜",
+          ranking_type: "weekly_growth",
+          description: "数据库不可用时展示的示例数据。",
+          items: demoProjectItems
+        },
+        mode: "demo",
+        warning: "database_unavailable"
+      });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/projects/rankings", async (req, res, next) => {
+  try {
+    const query = listQuerySchema
+      .extend({
+        category: z.string().optional()
+      })
+      .parse(req.query);
+
+    const rankings = await prisma.projectRanking.findMany({
+      where: {
+        enabled: true,
+        ranking_type: "weekly_growth"
+      },
+      orderBy: { created_at: "desc" },
+      take: query.limit,
+      skip: query.offset,
+      include: {
+        items: {
+          orderBy: { rank_no: "asc" },
+          include: { project: true }
+        }
+      }
+    });
+
+    res.json(jsonSafe({
+      data: rankings.map((ranking) => ({
+        id: ranking.id,
+        name: ranking.name,
+        ranking_type: ranking.ranking_type,
+        description: ranking.description,
+        created_at: ranking.created_at,
+        items: ranking.items
+          .map(projectItemFromRanking)
+          .filter((item) => !query.category || query.category === "all" || item.category === query.category)
+      })),
+      mode: rankings.length ? "live" : "demo"
+    }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.json({ data: [], mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/projects/:id", async (req, res, next) => {
+  try {
+    const params = z.object({ id: z.string() }).parse(req.params);
+    const project = await prisma.openSourceProject.findFirst({
+      where: {
+        OR: [
+          z.string().uuid().safeParse(params.id).success ? { id: params.id } : undefined,
+          { slug: params.id }
+        ].filter(Boolean) as Array<{ id?: string; slug?: string }>,
+        status: "published",
+        deleted_at: null
+      },
+      include: {
+        knowledge_points: { include: { knowledge_point: true } },
+        ranking_items: { include: { ranking: true } }
+      }
+    });
+
+    if (!project) {
+      res.status(404).json({ error: "not_found", message: "未找到这个开源项目" });
+      return;
+    }
+
+    res.json(jsonSafe({
+      data: {
+        ...project,
+        category: projectCategoryOf(project),
+        related_knowledge: project.knowledge_points.map((item) => item.knowledge_point.name),
+        rankings: project.ranking_items.map((item) => ({
+          ranking_id: item.ranking_id,
+          ranking_name: item.ranking.name,
+          rank_no: item.rank_no
+        }))
+      }
+    }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "读取项目详情需要数据库连接。" });
       return;
     }
 

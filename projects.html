@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>开源项目雷达 · 星火 AI 科学馆</title>
-    <link rel="stylesheet" href="./styles.css?v=20260506c" />
+    <link rel="stylesheet" href="./styles.css?v=20260506d" />
   </head>
   <body>
     <header class="site-header">
@@ -124,7 +124,7 @@
           <form class="history-form">
             <label>
               <span>榜单周</span>
-              <select>
+              <select name="ranking">
                 <option>2026 第 18 周</option>
                 <option>2026 第 17 周</option>
                 <option>2026 第 16 周</option>
@@ -132,19 +132,20 @@
             </label>
             <label>
               <span>分类</span>
-              <select>
-                <option>全部分类</option>
-                <option>AI 工具</option>
-                <option>小游戏</option>
-                <option>科学模拟</option>
+              <select name="category">
+                <option value="all">全部分类</option>
+                <option value="ai">AI 工具</option>
+                <option value="game">小游戏</option>
+                <option value="science">科学模拟</option>
+                <option value="beginner">适合初学者</option>
               </select>
             </label>
-            <button type="button">查询</button>
+            <button type="submit">查询</button>
           </form>
         </section>
       </section>
     </main>
 
-    <script src="./projects.js?v=20260506c"></script>
+    <script src="./projects.js?v=20260506d"></script>
   </body>
 </html>
