@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>科学人物讲解 · 星火 AI 科学馆</title>
+    <link rel="stylesheet" href="./styles.css?v=20260505a" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html#home" aria-label="星火 AI 科学馆首页">
+        <span class="brand-star">✦</span>
+        <span>星火 AI 科学馆</span>
+      </a>
+      <nav class="main-nav" aria-label="主导航">
+        <a href="./index.html#home">首页</a>
+        <a href="./ai-learning.html">AI 学习</a>
+        <a href="./hermes.html">Hermes 对话</a>
+        <a href="./frontier.html">今日前沿</a>
+        <a href="./projects.html">开源项目</a>
+        <a href="./knowledge.html">中小学知识</a>
+        <a href="./games.html">奥林匹克小游戏</a>
+        <a class="active" href="./scientists.html">科学人物</a>
+        <a href="./index.html#map">我的学习地图</a>
+        <a href="./contact.html">联系我</a>
+      </nav>
+      <div class="header-actions">
+        <a class="home-button" href="./scientists.html">返回人物馆</a>
+      </div>
+    </header>
+
+    <main class="page-shell scientists-page">
+      <article class="scientist-detail" id="scientist-detail" aria-live="polite">
+        <section class="scientist-detail-hero">
+          <div class="scientist-detail-photo" id="detail-photo"></div>
+          <div>
+            <p id="detail-category">科学人物</p>
+            <h1 id="detail-name">正在加载人物讲解</h1>
+            <span id="detail-summary">请稍等一下。</span>
+          </div>
+        </section>
+
+        <section class="scientist-detail-grid" aria-label="人物贡献讲解">
+          <div class="scientist-detail-main">
+            <section>
+              <h2>他是谁</h2>
+              <p id="detail-story"></p>
+            </section>
+            <section>
+              <h2>主要贡献</h2>
+              <ul id="detail-contributions"></ul>
+            </section>
+            <section>
+              <h2>怎么理解这些贡献</h2>
+              <p id="detail-explanation"></p>
+            </section>
+          </div>
+
+          <aside class="scientist-detail-side">
+            <section>
+              <h2>关联知识</h2>
+              <ul id="detail-knowledge"></ul>
+            </section>
+            <section>
+              <h2>可以思考</h2>
+              <p id="detail-question"></p>
+            </section>
+            <section>
+              <h2>学习启发</h2>
+              <p id="detail-inspiration"></p>
+            </section>
+          </aside>
+        </section>
+      </article>
+    </main>
+
+    <script src="./scientist-detail.js?v=20260503g"></script>
+  </body>
+</html>

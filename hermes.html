@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hermes 对话 · 星火 AI 科学馆</title>
+    <link rel="stylesheet" href="./styles.css?v=20260505a" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html#home" aria-label="星火 AI 科学馆首页">
+        <span class="brand-star">✦</span>
+        <span>星火 AI 科学馆</span>
+      </a>
+      <nav class="main-nav" aria-label="主导航">
+        <a href="./index.html#home">首页</a>
+        <a href="./ai-learning.html">AI 学习</a>
+        <a class="active" href="./hermes.html">Hermes 对话</a>
+        <a href="./frontier.html">今日前沿</a>
+        <a href="./projects.html">开源项目</a>
+        <a href="./knowledge.html">中小学知识</a>
+        <a href="./games.html">奥林匹克小游戏</a>
+        <a href="./scientists.html">科学人物</a>
+        <a href="./index.html#map">我的学习地图</a>
+        <a href="./contact.html">联系我</a>
+      </nav>
+      <div class="header-actions">
+        <a class="home-button" href="./index.html#home">返回首页</a>
+      </div>
+    </header>
+
+    <main class="page-shell hermes-page">
+      <section class="hermes-chat-shell" aria-labelledby="hermes-title">
+        <aside class="hermes-side">
+          <p>本机模型</p>
+          <h1 id="hermes-title">Hermes 对话</h1>
+          <span>连接你电脑上部署的 Hermes，用它来讲题、写提示词、做学习计划和头脑风暴。</span>
+          <dl>
+            <div><dt>服务</dt><dd id="hermesBaseUrl">检测中</dd></div>
+            <div><dt>模型</dt><dd id="hermesModel">Hermes</dd></div>
+            <div><dt>状态</dt><dd id="hermesStatus">正在连接</dd></div>
+          </dl>
+          <button id="hermesCheck" type="button">重新检测</button>
+        </aside>
+
+        <section class="hermes-chat" aria-label="Hermes 聊天窗口">
+          <div class="hermes-messages" id="hermesMessages" aria-live="polite">
+            <article class="hermes-message assistant">
+              <strong>Hermes</strong>
+              <p>你好，我是本机 Hermes。你可以问我 AI 学习、科学知识、小游戏设计，或者让我帮你整理读书笔记。</p>
+            </article>
+          </div>
+
+          <form class="hermes-composer" id="hermesForm">
+            <textarea id="hermesInput" rows="3" placeholder="输入你想和 Hermes 讨论的问题..."></textarea>
+            <div>
+              <button id="hermesClear" type="button">清空</button>
+              <button type="submit">发送</button>
+            </div>
+          </form>
+        </section>
+      </section>
+    </main>
+
+    <script src="./hermes.js?v=20260505a"></script>
+  </body>
+</html>

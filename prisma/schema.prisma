@@ -1,0 +1,779 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ContentType {
+  frontier_news
+  open_source_intro
+  knowledge_article
+  ai_problem
+  scientist
+  experiment
+  game_intro
+  learning_path_node
+}
+
+enum PublishStatus {
+  draft
+  pending_review
+  published
+  offline
+  rejected
+}
+
+enum SchoolStage {
+  primary
+  middle
+  high
+  general
+}
+
+enum Subject {
+  math
+  physics
+  chemistry
+  biology
+  information_tech
+  chinese_logic
+  english_tech_reading
+  science
+  ai
+  general
+}
+
+enum Difficulty {
+  easy
+  normal
+  hard
+  advanced
+}
+
+enum SourceType {
+  official_blog
+  research_org
+  rss
+  github_trending
+  hugging_face
+  arxiv
+  tech_media
+  manual
+}
+
+enum ReviewStatus {
+  pending
+  approved
+  returned
+  deleted
+  unsuitable
+}
+
+enum RecommendationScene {
+  home
+  knowledge
+  game
+  project
+  after_game
+  learning_path
+}
+
+enum GameRecordStatus {
+  started
+  completed
+  failed
+  abandoned
+}
+
+model User {
+  id                  String              @id @default(uuid()) @db.Uuid
+  email               String?             @unique @db.VarChar(255)
+  phone               String?             @unique @db.VarChar(32)
+  password_hash       String?             @db.VarChar(255)
+  nickname            String              @db.VarChar(80)
+  avatar_url          String?
+  school_stage        SchoolStage?
+  grade               Int?                @db.SmallInt
+  gender              String?             @db.VarChar(32)
+  learning_preference Json?
+  status              String              @default("active") @db.VarChar(32)
+  last_login_at       DateTime?           @db.Timestamptz(6)
+  created_at          DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at          DateTime            @updatedAt @db.Timestamptz(6)
+
+  interests       UserInterest[]
+  game_records    GameRecord[]
+  progress        LearningProgress[]
+  content_actions UserContentAction[]
+  favorites       UserFavorite[]
+  badges          UserBadge[]
+  recommendations Recommendation[]
+
+  @@index([school_stage, grade])
+  @@index([status])
+  @@map("users")
+}
+
+model AdminUser {
+  id            String    @id @default(uuid()) @db.Uuid
+  email         String    @unique @db.VarChar(255)
+  password_hash String    @db.VarChar(255)
+  name          String    @db.VarChar(80)
+  role          String    @db.VarChar(32)
+  status        String    @default("active") @db.VarChar(32)
+  last_login_at DateTime? @db.Timestamptz(6)
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at    DateTime  @updatedAt @db.Timestamptz(6)
+
+  authored_contents     Content[]        @relation("ContentAuthor")
+  edited_contents       Content[]        @relation("ContentEditor")
+  created_knowledge     KnowledgePoint[]
+  assigned_reviews      ReviewTask[]     @relation("ReviewAssignee")
+  submitted_reviews     ReviewTask[]     @relation("ReviewSubmitter")
+  completed_reviews     ReviewTask[]     @relation("ReviewReviewer")
+
+  @@index([role])
+  @@index([status])
+  @@map("admin_users")
+}
+
+model Tag {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(60)
+  slug        String   @unique @db.VarChar(80)
+  tag_type    String   @db.VarChar(32)
+  description String?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @updatedAt @db.Timestamptz(6)
+
+  user_interests UserInterest[]
+  contents       ContentTag[]
+  projects       ProjectTag[]
+
+  @@index([tag_type])
+  @@map("tags")
+}
+
+model UserInterest {
+  user_id    String   @db.Uuid
+  tag_id     String   @db.Uuid
+  weight     Decimal  @default(1) @db.Decimal(5, 2)
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  tag  Tag  @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, tag_id])
+  @@index([tag_id])
+  @@map("user_interests")
+}
+
+model Content {
+  id                String        @id @default(uuid()) @db.Uuid
+  content_type      ContentType
+  title             String        @db.VarChar(200)
+  slug              String        @unique @db.VarChar(240)
+  summary           String?
+  body              String
+  cover_image_url   String?
+  school_stage      SchoolStage?
+  min_grade         Int?          @db.SmallInt
+  max_grade         Int?          @db.SmallInt
+  subject           Subject?
+  difficulty        Difficulty?
+  source_url        String?
+  source_name       String?       @db.VarChar(120)
+  author_id         String?       @db.Uuid
+  editor_id         String?       @db.Uuid
+  status            PublishStatus @default(draft)
+  published_at      DateTime?     @db.Timestamptz(6)
+  offline_at        DateTime?     @db.Timestamptz(6)
+  view_count        BigInt        @default(0)
+  favorite_count    BigInt        @default(0)
+  metadata          Json?
+  created_at        DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at        DateTime      @updatedAt @db.Timestamptz(6)
+  deleted_at        DateTime?     @db.Timestamptz(6)
+
+  author           AdminUser?              @relation("ContentAuthor", fields: [author_id], references: [id], onDelete: SetNull)
+  editor           AdminUser?              @relation("ContentEditor", fields: [editor_id], references: [id], onDelete: SetNull)
+  tags             ContentTag[]
+  knowledge_points ContentKnowledgePoint[]
+  news_items       NewsItem[]
+  ai_drafts        AiDraft[]
+  actions          UserContentAction[]
+  favorites        UserFavorite[]
+
+  @@index([status, published_at])
+  @@index([content_type, status, published_at])
+  @@index([min_grade, max_grade])
+  @@index([subject, difficulty])
+  @@index([deleted_at])
+  @@map("contents")
+}
+
+model ContentTag {
+  content_id String   @db.Uuid
+  tag_id     String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  content Content @relation(fields: [content_id], references: [id], onDelete: Cascade)
+  tag     Tag     @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([content_id, tag_id])
+  @@index([tag_id])
+  @@map("content_tags")
+}
+
+model ContentKnowledgePoint {
+  content_id         String   @db.Uuid
+  knowledge_point_id String   @db.Uuid
+  relation_type      String   @default("related") @db.VarChar(32)
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  content         Content        @relation(fields: [content_id], references: [id], onDelete: Cascade)
+  knowledge_point KnowledgePoint @relation(fields: [knowledge_point_id], references: [id], onDelete: Cascade)
+
+  @@id([content_id, knowledge_point_id])
+  @@index([knowledge_point_id])
+  @@map("content_knowledge_points")
+}
+
+model NewsSource {
+  id                     String     @id @default(uuid()) @db.Uuid
+  name                   String     @db.VarChar(120)
+  source_type            SourceType
+  url                    String
+  fetch_interval_minutes Int        @default(1440)
+  enabled                Boolean    @default(true)
+  default_tag_ids        String[]   @db.Uuid
+  trust_level            Int        @default(3) @db.SmallInt
+  last_fetched_at        DateTime?  @db.Timestamptz(6)
+  last_fetch_status      String?    @db.VarChar(32)
+  last_fetch_message     String?
+  created_at             DateTime   @default(now()) @db.Timestamptz(6)
+  updated_at             DateTime   @updatedAt @db.Timestamptz(6)
+
+  items NewsItem[]
+
+  @@index([source_type])
+  @@index([enabled])
+  @@map("news_sources")
+}
+
+model NewsItem {
+  id              String    @id @default(uuid()) @db.Uuid
+  source_id       String    @db.Uuid
+  source_url      String
+  source_url_hash String    @unique @db.VarChar(64)
+  title           String    @db.VarChar(300)
+  summary         String?
+  raw_content     String?
+  author          String?   @db.VarChar(120)
+  published_at    DateTime? @db.Timestamptz(6)
+  fetched_at      DateTime  @default(now()) @db.Timestamptz(6)
+  language        String?   @db.VarChar(16)
+  status          String    @default("new") @db.VarChar(32)
+  content_id      String?   @db.Uuid
+  metadata        Json?
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime  @updatedAt @db.Timestamptz(6)
+
+  source    NewsSource @relation(fields: [source_id], references: [id], onDelete: Cascade)
+  content   Content?   @relation(fields: [content_id], references: [id], onDelete: SetNull)
+  ai_drafts AiDraft[]
+
+  @@index([published_at])
+  @@index([fetched_at])
+  @@index([status])
+  @@map("news_items")
+}
+
+model AiDraft {
+  id                         String    @id @default(uuid()) @db.Uuid
+  news_item_id               String?   @db.Uuid
+  source_content_id          String?   @db.Uuid
+  draft_type                 String    @db.VarChar(64)
+  title                      String?   @db.VarChar(200)
+  summary                    String?
+  body                       String?
+  suggested_tags             Json?
+  suggested_knowledge_points Json?
+  model_name                 String?   @db.VarChar(120)
+  prompt_version             String?   @db.VarChar(64)
+  status                     String    @default("generated") @db.VarChar(32)
+  created_at                 DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime  @updatedAt @db.Timestamptz(6)
+
+  news_item      NewsItem? @relation(fields: [news_item_id], references: [id], onDelete: SetNull)
+  source_content Content?  @relation(fields: [source_content_id], references: [id], onDelete: SetNull)
+
+  @@index([draft_type])
+  @@index([status])
+  @@map("ai_drafts")
+}
+
+model ReviewTask {
+  id              String       @id @default(uuid()) @db.Uuid
+  target_type     String       @db.VarChar(32)
+  target_id       String       @db.Uuid
+  title           String       @db.VarChar(200)
+  status          ReviewStatus @default(pending)
+  priority        Int          @default(0) @db.SmallInt
+  assignee_id     String?      @db.Uuid
+  submitted_by_id String?      @db.Uuid
+  reviewed_by_id  String?      @db.Uuid
+  review_comment  String?
+  submitted_at    DateTime     @default(now()) @db.Timestamptz(6)
+  reviewed_at     DateTime?    @db.Timestamptz(6)
+  created_at      DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime     @updatedAt @db.Timestamptz(6)
+
+  assignee    AdminUser? @relation("ReviewAssignee", fields: [assignee_id], references: [id], onDelete: SetNull)
+  submitted_by AdminUser? @relation("ReviewSubmitter", fields: [submitted_by_id], references: [id], onDelete: SetNull)
+  reviewed_by  AdminUser? @relation("ReviewReviewer", fields: [reviewed_by_id], references: [id], onDelete: SetNull)
+
+  @@index([status, priority, submitted_at])
+  @@index([target_type, target_id])
+  @@map("review_tasks")
+}
+
+model AuditLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  actor_type  String   @db.VarChar(32)
+  actor_id    String?  @db.Uuid
+  action      String   @db.VarChar(80)
+  target_type String   @db.VarChar(64)
+  target_id   String?  @db.Uuid
+  before_data Json?
+  after_data  Json?
+  ip          String?  @db.Inet
+  user_agent  String?
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([actor_type])
+  @@index([actor_id])
+  @@index([action])
+  @@index([target_type])
+  @@index([target_id])
+  @@index([created_at])
+  @@map("audit_logs")
+}
+
+model KnowledgePoint {
+  id                         String        @id @default(uuid()) @db.Uuid
+  name                       String        @db.VarChar(120)
+  slug                       String        @unique @db.VarChar(160)
+  school_stage               SchoolStage
+  grade                      Int?          @db.SmallInt
+  subject                    Subject
+  difficulty                 Difficulty
+  curriculum_concept         String?
+  plain_explanation          String?
+  diagram_steps              Json?
+  common_misunderstandings   Json?
+  examples                   Json?
+  ai_science_extension       String?
+  recommended_minutes        Int?
+  status                     PublishStatus @default(draft)
+  created_by_id              String?       @db.Uuid
+  created_at                 DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at                 DateTime      @updatedAt @db.Timestamptz(6)
+  deleted_at                 DateTime?     @db.Timestamptz(6)
+
+  created_by       AdminUser?              @relation(fields: [created_by_id], references: [id], onDelete: SetNull)
+  contents         ContentKnowledgePoint[]
+  games            GameKnowledgePoint[]
+  projects         ProjectKnowledgePoint[]
+  progress         LearningProgress[]
+  outgoing         KnowledgeRelation[]     @relation("KnowledgeRelationFrom")
+  incoming         KnowledgeRelation[]     @relation("KnowledgeRelationTo")
+
+  @@index([school_stage, grade, subject])
+  @@index([status])
+  @@index([deleted_at])
+  @@map("knowledge_points")
+}
+
+model KnowledgeRelation {
+  from_knowledge_point_id String   @db.Uuid
+  to_knowledge_point_id   String   @db.Uuid
+  relation_type           String   @db.VarChar(32)
+  created_at              DateTime @default(now()) @db.Timestamptz(6)
+
+  from KnowledgePoint @relation("KnowledgeRelationFrom", fields: [from_knowledge_point_id], references: [id], onDelete: Cascade)
+  to   KnowledgePoint @relation("KnowledgeRelationTo", fields: [to_knowledge_point_id], references: [id], onDelete: Cascade)
+
+  @@id([from_knowledge_point_id, to_knowledge_point_id, relation_type])
+  @@index([relation_type])
+  @@map("knowledge_relations")
+}
+
+model Game {
+  id              String        @id @default(uuid()) @db.Uuid
+  name            String        @db.VarChar(120)
+  slug            String        @unique @db.VarChar(160)
+  description     String?
+  game_type       String        @db.VarChar(64)
+  school_stage    SchoolStage?
+  min_grade       Int?          @db.SmallInt
+  max_grade       Int?          @db.SmallInt
+  subject         Subject?
+  difficulty      Difficulty?
+  entry_url       String
+  cover_image_url String?
+  status          PublishStatus @default(draft)
+  created_at      DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at      DateTime      @updatedAt @db.Timestamptz(6)
+  deleted_at      DateTime?     @db.Timestamptz(6)
+
+  levels           GameLevel[]
+  knowledge_points GameKnowledgePoint[]
+  records          GameRecord[]
+
+  @@index([game_type])
+  @@index([school_stage])
+  @@index([min_grade])
+  @@index([max_grade])
+  @@index([subject])
+  @@index([difficulty])
+  @@index([status])
+  @@index([deleted_at])
+  @@map("games")
+}
+
+model GameLevel {
+  id          String      @id @default(uuid()) @db.Uuid
+  game_id     String      @db.Uuid
+  level_no    Int
+  name        String      @db.VarChar(120)
+  description String?
+  difficulty  Difficulty?
+  config      Json?
+  created_at  DateTime    @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime    @updatedAt @db.Timestamptz(6)
+
+  game    Game         @relation(fields: [game_id], references: [id], onDelete: Cascade)
+  records GameRecord[]
+
+  @@unique([game_id, level_no])
+  @@map("game_levels")
+}
+
+model GameKnowledgePoint {
+  game_id            String   @db.Uuid
+  knowledge_point_id String   @db.Uuid
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  game            Game           @relation(fields: [game_id], references: [id], onDelete: Cascade)
+  knowledge_point KnowledgePoint @relation(fields: [knowledge_point_id], references: [id], onDelete: Cascade)
+
+  @@id([game_id, knowledge_point_id])
+  @@index([knowledge_point_id])
+  @@map("game_knowledge_points")
+}
+
+model GameRecord {
+  id                          String           @id @default(uuid()) @db.Uuid
+  user_id                     String           @db.Uuid
+  game_id                     String           @db.Uuid
+  level_id                    String?          @db.Uuid
+  score                       Int?
+  max_score                   Int?
+  status                      GameRecordStatus
+  started_at                  DateTime?        @db.Timestamptz(6)
+  completed_at                DateTime?        @db.Timestamptz(6)
+  duration_seconds            Int?
+  mistakes                    Json?
+  learned_knowledge_point_ids String[]         @db.Uuid
+  metadata                    Json?
+  created_at                  DateTime         @default(now()) @db.Timestamptz(6)
+
+  user  User       @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  game  Game       @relation(fields: [game_id], references: [id], onDelete: Cascade)
+  level GameLevel? @relation(fields: [level_id], references: [id], onDelete: SetNull)
+
+  @@index([score])
+  @@index([status])
+  @@index([completed_at])
+  @@index([user_id, completed_at])
+  @@index([game_id, completed_at])
+  @@index([user_id, game_id])
+  @@map("game_records")
+}
+
+model LearningProgress {
+  id                 String    @id @default(uuid()) @db.Uuid
+  user_id            String    @db.Uuid
+  knowledge_point_id String    @db.Uuid
+  status             String    @default("not_started") @db.VarChar(32)
+  progress_percent   Int       @default(0) @db.SmallInt
+  mastery_score      Decimal?  @db.Decimal(5, 2)
+  last_activity_at   DateTime? @db.Timestamptz(6)
+  completed_at       DateTime? @db.Timestamptz(6)
+  source_type        String?   @db.VarChar(32)
+  source_id          String?   @db.Uuid
+  created_at         DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime  @updatedAt @db.Timestamptz(6)
+
+  user            User           @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  knowledge_point KnowledgePoint @relation(fields: [knowledge_point_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, knowledge_point_id])
+  @@index([status])
+  @@index([last_activity_at])
+  @@map("learning_progress")
+}
+
+model UserContentAction {
+  id               String   @id @default(uuid()) @db.Uuid
+  user_id          String   @db.Uuid
+  content_id       String   @db.Uuid
+  action_type      String   @db.VarChar(32)
+  duration_seconds Int?
+  metadata         Json?
+  created_at       DateTime @default(now()) @db.Timestamptz(6)
+
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [content_id], references: [id], onDelete: Cascade)
+
+  @@index([action_type])
+  @@index([created_at])
+  @@index([user_id, created_at])
+  @@index([content_id, action_type])
+  @@map("user_content_actions")
+}
+
+model UserFavorite {
+  user_id    String   @db.Uuid
+  content_id String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  content Content @relation(fields: [content_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, content_id])
+  @@index([content_id])
+  @@map("user_favorites")
+}
+
+model Badge {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String   @db.VarChar(120)
+  slug        String   @unique @db.VarChar(160)
+  description String?
+  icon_url    String?
+  rule_config Json?
+  enabled     Boolean  @default(true)
+  created_at  DateTime @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime @updatedAt @db.Timestamptz(6)
+
+  users UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  user_id     String   @db.Uuid
+  badge_id    String   @db.Uuid
+  earned_at   DateTime @default(now()) @db.Timestamptz(6)
+  source_type String?  @db.VarChar(32)
+  source_id   String?  @db.Uuid
+
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badge_id], references: [id], onDelete: Cascade)
+
+  @@id([user_id, badge_id])
+  @@index([badge_id])
+  @@map("user_badges")
+}
+
+model OpenSourceProject {
+  id               String        @id @default(uuid()) @db.Uuid
+  name             String        @db.VarChar(160)
+  slug             String        @unique @db.VarChar(180)
+  repo_url         String
+  repo_url_hash    String        @unique @db.VarChar(64)
+  homepage_url     String?
+  description      String?
+  readme_summary   String?
+  stars            Int?
+  forks            Int?
+  language         String?       @db.VarChar(80)
+  license          String?       @db.VarChar(120)
+  repo_updated_at  DateTime?     @db.Timestamptz(6)
+  school_stage     SchoolStage?
+  min_grade        Int?          @db.SmallInt
+  max_grade        Int?          @db.SmallInt
+  difficulty       Difficulty?
+  learning_value   String?
+  recommend_reason String?
+  remix_ideas      String?
+  status           PublishStatus @default(draft)
+  metadata         Json?
+  created_at       DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime      @updatedAt @db.Timestamptz(6)
+  deleted_at       DateTime?     @db.Timestamptz(6)
+
+  tags             ProjectTag[]
+  knowledge_points ProjectKnowledgePoint[]
+  ranking_items    ProjectRankingItem[]
+
+  @@index([stars])
+  @@index([language])
+  @@index([repo_updated_at])
+  @@index([school_stage])
+  @@index([difficulty])
+  @@index([status])
+  @@index([deleted_at])
+  @@map("open_source_projects")
+}
+
+model ProjectTag {
+  project_id String   @db.Uuid
+  tag_id     String   @db.Uuid
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  project OpenSourceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  tag     Tag               @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([project_id, tag_id])
+  @@index([tag_id])
+  @@map("project_tags")
+}
+
+model ProjectKnowledgePoint {
+  project_id         String   @db.Uuid
+  knowledge_point_id String   @db.Uuid
+  created_at         DateTime @default(now()) @db.Timestamptz(6)
+
+  project         OpenSourceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+  knowledge_point KnowledgePoint     @relation(fields: [knowledge_point_id], references: [id], onDelete: Cascade)
+
+  @@id([project_id, knowledge_point_id])
+  @@index([knowledge_point_id])
+  @@map("project_knowledge_points")
+}
+
+model ProjectRanking {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(120)
+  ranking_type String   @db.VarChar(64)
+  description  String?
+  enabled      Boolean  @default(true)
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @updatedAt @db.Timestamptz(6)
+
+  items ProjectRankingItem[]
+
+  @@index([ranking_type])
+  @@map("project_rankings")
+}
+
+model ProjectRankingItem {
+  ranking_id String   @db.Uuid
+  project_id String   @db.Uuid
+  rank_no    Int
+  reason     String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  ranking ProjectRanking    @relation(fields: [ranking_id], references: [id], onDelete: Cascade)
+  project OpenSourceProject @relation(fields: [project_id], references: [id], onDelete: Cascade)
+
+  @@id([ranking_id, project_id])
+  @@unique([ranking_id, rank_no])
+  @@map("project_ranking_items")
+}
+
+model RecommendationRule {
+  id          String              @id @default(uuid()) @db.Uuid
+  name        String              @db.VarChar(120)
+  scene       RecommendationScene
+  target_type String              @db.VarChar(32)
+  conditions  Json
+  strategy    Json
+  priority    Int                 @default(0)
+  enabled     Boolean             @default(true)
+  start_at    DateTime?           @db.Timestamptz(6)
+  end_at      DateTime?           @db.Timestamptz(6)
+  created_at  DateTime            @default(now()) @db.Timestamptz(6)
+  updated_at  DateTime            @updatedAt @db.Timestamptz(6)
+
+  recommendations Recommendation[]
+
+  @@index([scene])
+  @@index([target_type])
+  @@map("recommendation_rules")
+}
+
+model Recommendation {
+  id           String              @id @default(uuid()) @db.Uuid
+  user_id      String              @db.Uuid
+  scene        RecommendationScene
+  target_type  String              @db.VarChar(32)
+  target_id    String              @db.Uuid
+  rule_id      String?             @db.Uuid
+  score        Decimal?            @db.Decimal(8, 4)
+  reason       String?
+  rank_no      Int?
+  shown_at     DateTime?           @db.Timestamptz(6)
+  clicked_at   DateTime?           @db.Timestamptz(6)
+  dismissed_at DateTime?           @db.Timestamptz(6)
+  created_at   DateTime            @default(now()) @db.Timestamptz(6)
+
+  user User                @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  rule RecommendationRule? @relation(fields: [rule_id], references: [id], onDelete: SetNull)
+
+  @@index([scene])
+  @@index([target_type])
+  @@index([target_id])
+  @@index([score])
+  @@index([shown_at])
+  @@index([clicked_at])
+  @@index([created_at])
+  @@index([user_id, scene, created_at])
+  @@index([target_type, target_id])
+  @@map("recommendations")
+}
+
+model JobRun {
+  id            String    @id @default(uuid()) @db.Uuid
+  job_name      String    @db.VarChar(120)
+  job_type      String    @db.VarChar(64)
+  status        String    @db.VarChar(32)
+  started_at    DateTime  @db.Timestamptz(6)
+  finished_at   DateTime? @db.Timestamptz(6)
+  duration_ms   Int?
+  success_count Int       @default(0)
+  failure_count Int       @default(0)
+  message       String?
+  metadata      Json?
+  created_at    DateTime  @default(now()) @db.Timestamptz(6)
+
+  @@index([job_name])
+  @@index([job_type])
+  @@index([status])
+  @@index([started_at])
+  @@map("job_runs")
+}
+
+model DailyStat {
+  id              String   @id @default(uuid()) @db.Uuid
+  stat_date       DateTime @db.Date
+  metric_key      String   @db.VarChar(120)
+  metric_value    Decimal  @db.Decimal(18, 4)
+  dimension_type  String?  @db.VarChar(64)
+  dimension_value String?  @db.VarChar(120)
+  metadata        Json?
+  created_at      DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([stat_date, metric_key, dimension_type, dimension_value])
+  @@index([stat_date])
+  @@index([metric_key])
+  @@index([dimension_type])
+  @@index([dimension_value])
+  @@map("daily_stats")
+}

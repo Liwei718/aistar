@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>开源项目雷达 · 星火 AI 科学馆</title>
+    <link rel="stylesheet" href="./styles.css?v=20260505a" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html#home" aria-label="星火 AI 科学馆首页">
+        <span class="brand-star">✦</span>
+        <span>星火 AI 科学馆</span>
+      </a>
+      <nav class="main-nav" aria-label="主导航">
+        <a href="./index.html#home">首页</a>
+        <a href="./ai-learning.html">AI 学习</a>
+        <a href="./hermes.html">Hermes 对话</a>
+        <a href="./frontier.html">今日前沿</a>
+        <a class="active" href="./projects.html">开源项目</a>
+        <a href="./knowledge.html">中小学知识</a>
+        <a href="./games.html">奥林匹克小游戏</a>
+        <a href="./scientists.html">科学人物</a>
+        <a href="./index.html#map">我的学习地图</a>
+        <a href="./contact.html">联系我</a>
+      </nav>
+      <div class="header-actions">
+        <a class="home-button" href="./index.html#home">返回首页</a>
+      </div>
+    </header>
+
+    <main class="page-shell projects-page">
+      <section class="project-radar" aria-labelledby="project-radar-title">
+        <div class="project-header">
+          <div>
+            <p>每周自动扫描 GitHub</p>
+            <h1 id="project-radar-title">开源项目雷达</h1>
+            <span>每周抓取星星数量增长最快的 10 个项目，保存历史榜单，帮你发现值得试玩、Fork 和改造的真实工程。</span>
+          </div>
+          <a href="#project-history">查询历史榜单 →</a>
+        </div>
+
+        <div class="project-toolbar" aria-label="项目筛选">
+          <button class="active" type="button" data-project-filter="all">全部</button>
+          <button type="button" data-project-filter="ai">AI 工具</button>
+          <button type="button" data-project-filter="game">小游戏</button>
+          <button type="button" data-project-filter="science">科学模拟</button>
+          <button type="button" data-project-filter="beginner">适合初学者</button>
+        </div>
+
+        <section class="project-top-list" aria-label="本周星标增长最快的开源项目">
+          <article class="project-card lead" data-project-category="ai">
+            <strong>01</strong>
+            <span>AI 工具 · +18.6k Stars</span>
+            <h2>OpenVoice Lab</h2>
+            <p>一个语音克隆和语音转换项目，可以学习声音特征、模型推理和音频处理的基础概念。</p>
+            <dl>
+              <div><dt>主要语言</dt><dd>Python</dd></div>
+              <div><dt>适合改造</dt><dd>做一个“科学人物讲解员”语音 demo</dd></div>
+            </dl>
+          </article>
+
+          <article class="project-card" data-project-category="ai">
+            <strong>02</strong>
+            <span>AI 应用 · +14.2k Stars</span>
+            <h2>Mini Agent Studio</h2>
+            <p>用简单流程搭建 AI 小助手，适合理解提示词、工具调用和任务拆解。</p>
+          </article>
+          <article class="project-card" data-project-category="game">
+            <strong>03</strong>
+            <span>小游戏 · +11.9k Stars</span>
+            <h2>Physics Playground</h2>
+            <p>浏览器里的物理小游戏模板，可以改造成力学、碰撞和能量守恒实验。</p>
+          </article>
+          <article class="project-card" data-project-category="science">
+            <strong>04</strong>
+            <span>科学模拟 · +9.8k Stars</span>
+            <h2>Orbit Visualizer</h2>
+            <p>用可视化方式展示轨道运动，适合学习万有引力、速度和稳定轨道。</p>
+          </article>
+          <article class="project-card" data-project-category="beginner">
+            <strong>05</strong>
+            <span>初学者 · +8.7k Stars</span>
+            <h2>Learn Python by Building</h2>
+            <p>通过小项目学习 Python，适合从变量、函数和文件读写开始入门。</p>
+          </article>
+          <article class="project-card" data-project-category="ai">
+            <strong>06</strong>
+            <span>AI 模型 · +7.9k Stars</span>
+            <h2>Tiny Vision Model</h2>
+            <p>轻量图像识别模型，适合理解图片分类、训练数据和模型大小。</p>
+          </article>
+          <article class="project-card" data-project-category="game">
+            <strong>07</strong>
+            <span>游戏引擎 · +7.1k Stars</span>
+            <h2>Canvas Game Kit</h2>
+            <p>用 HTML Canvas 做 2D 游戏的工具包，适合制作闯关、计分和动画。</p>
+          </article>
+          <article class="project-card" data-project-category="science">
+            <strong>08</strong>
+            <span>数学可视化 · +6.4k Stars</span>
+            <h2>Math Graph Lab</h2>
+            <p>把函数、几何和统计图形画出来，适合做课内数学知识的互动展示。</p>
+          </article>
+          <article class="project-card" data-project-category="beginner">
+            <strong>09</strong>
+            <span>网页入门 · +5.8k Stars</span>
+            <h2>Starter Web Apps</h2>
+            <p>一组网页小应用模板，适合练习 HTML、CSS、JavaScript 和接口调用。</p>
+          </article>
+          <article class="project-card" data-project-category="ai">
+            <strong>10</strong>
+            <span>开源模型 · +5.2k Stars</span>
+            <h2>Local Chat Model</h2>
+            <p>可在本地运行的聊天模型示例，适合理解模型下载、推理和隐私保护。</p>
+          </article>
+        </section>
+
+        <section class="project-history" id="project-history" aria-labelledby="project-history-title">
+          <div>
+            <p>历史项目会持续保存</p>
+            <h2 id="project-history-title">历史榜单查询</h2>
+          </div>
+          <form class="history-form">
+            <label>
+              <span>榜单周</span>
+              <select>
+                <option>2026 第 18 周</option>
+                <option>2026 第 17 周</option>
+                <option>2026 第 16 周</option>
+              </select>
+            </label>
+            <label>
+              <span>分类</span>
+              <select>
+                <option>全部分类</option>
+                <option>AI 工具</option>
+                <option>小游戏</option>
+                <option>科学模拟</option>
+              </select>
+            </label>
+            <button type="button">查询</button>
+          </form>
+        </section>
+      </section>
+    </main>
+
+    <script src="./projects.js?v=20260503a"></script>
+  </body>
+</html>

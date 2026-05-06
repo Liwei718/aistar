@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>联系我 · 星火 AI 科学馆</title>
+    <link rel="stylesheet" href="./styles.css?v=20260505a" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html#home" aria-label="星火 AI 科学馆首页">
+        <span class="brand-star">✦</span>
+        <span>星火 AI 科学馆</span>
+      </a>
+      <nav class="main-nav" aria-label="主导航">
+        <a href="./index.html#home">首页</a>
+        <a href="./ai-learning.html">AI 学习</a>
+        <a href="./hermes.html">Hermes 对话</a>
+        <a href="./frontier.html">今日前沿</a>
+        <a href="./projects.html">开源项目</a>
+        <a href="./knowledge.html">中小学知识</a>
+        <a href="./games.html">奥林匹克小游戏</a>
+        <a href="./scientists.html">科学人物</a>
+        <a href="./index.html#map">我的学习地图</a>
+        <a class="active" href="./contact.html">联系我</a>
+      </nav>
+      <div class="header-actions">
+        <a class="home-button" href="./index.html#home">返回首页</a>
+      </div>
+    </header>
+
+    <main class="page-shell contact-page">
+      <section class="contact-section contact-page-section" aria-labelledby="contact-title">
+        <div class="contact-intro">
+          <p>联系我</p>
+          <h1 id="contact-title">有想法，直接发给我</h1>
+          <span>欢迎反馈体验问题、课程合作、内容建议，或者告诉我你希望孩子先学哪一块。</span>
+          <a class="primary-email" href="mailto:kevin_time_space@163.com">
+            <small>邮箱</small>
+            <strong>kevin_time_space@163.com</strong>
+          </a>
+          <div class="contact-methods compact" aria-label="联系方式">
+            <span>深圳 · 青少年 AI 科学学习</span>
+          </div>
+        </div>
+        <form class="contact-form" id="contactForm">
+          <label>
+            <span>你的称呼</span>
+            <input name="name" type="text" autocomplete="name" placeholder="家长 / 老师 / 同学" />
+          </label>
+          <label>
+            <span>联系方式</span>
+            <input name="contact" type="text" autocomplete="email" placeholder="邮箱、手机号或微信" />
+          </label>
+          <label>
+            <span>想说的话</span>
+            <textarea name="message" rows="4" placeholder="比如：希望增加某个知识点、想合作课程、发现了页面问题"></textarea>
+          </label>
+          <button type="submit">发送留言</button>
+          <p class="contact-message" id="contactMessage">当前为本地演示，留言会先在页面确认，后续接入后端保存。</p>
+        </form>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>星火 AI 科学馆 · 游戏化学习 × AI 智能辅导 × 科学探索</p>
+    </footer>
+
+    <script src="./app.js?v=20260503j"></script>
+  </body>
+</html>

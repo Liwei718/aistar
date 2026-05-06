@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>星火 AI 科学馆</title>
+    <link rel="stylesheet" href="./styles.css?v=20260506a" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#home" aria-label="星火 AI 科学馆首页">
+        <span class="brand-star">✦</span>
+        <span>星火 AI 科学馆</span>
+      </a>
+      <nav class="main-nav" aria-label="主导航">
+        <a class="active" href="#home">首页</a>
+        <a href="./ai-learning.html">AI 学习</a>
+        <a href="./hermes.html">Hermes 对话</a>
+        <a href="./frontier.html">今日前沿</a>
+        <a href="./projects.html">开源项目</a>
+        <a href="./knowledge.html">中小学知识</a>
+        <a href="./games.html">奥林匹克小游戏</a>
+        <a href="./scientists.html">科学人物</a>
+        <a href="#map">我的学习地图</a>
+        <a href="./contact.html">联系我</a>
+      </nav>
+      <div class="header-actions">
+        <div class="user-menu">
+          <button class="login-button" id="authEntry" type="button">
+            <span class="icon-user"></span>
+            登录
+          </button>
+          <aside class="profile-popover" id="profilePopover" aria-label="用户资料浮窗">
+            <div class="student-avatar" id="profileAvatar">少</div>
+            <div class="student-head">
+              <h2 id="profileGreeting">你好，星火少年！</h2>
+              <strong id="profileLevel">Lv.12</strong>
+            </div>
+            <div class="xp-bar"><span id="profileXpBar"></span></div>
+            <p class="xp-text" id="profileXpText">870 / 1500 经验值</p>
+            <div class="badge-row">
+              <span>探索者</span>
+              <span>逻辑达人</span>
+              <span>坚持之星</span>
+            </div>
+            <dl class="profile-list">
+              <div><dt>年级</dt><dd id="profileGrade">初二</dd></div>
+              <div><dt>兴趣</dt><dd id="profileInterests">物理 · AI · 太空 · 游戏</dd></div>
+              <div><dt>学习风格</dt><dd id="profileStyles">视觉型 · 逻辑型</dd></div>
+              <div><dt>个性化</dt><dd id="profilePersonalization">基于年级、兴趣与学习进度，性别为可选偏好</dd></div>
+            </dl>
+          </aside>
+        </div>
+      </div>
+    </header>
+
+    <main id="home" class="page-shell">
+      <section class="hero-grid" aria-labelledby="hero-title">
+        <div class="hero-panel book-hero-panel">
+          <div class="book-cover-promo">
+            <img src="./assets/ai-magic-cover.png" alt="《解锁 AI 魔法》书籍封面" />
+          </div>
+          <div class="book-hero-copy">
+            <p>AI 学习第一本书</p>
+            <h1 id="hero-title">解锁 AI 魔法</h1>
+            <h2>和爸爸一起走进智能未来</h2>
+            <span>用亲子共读的方式理解人工智能：从提问、判断答案，到把 AI 用进学习和创造。</span>
+            <div class="book-hero-actions">
+              <a href="./ai-learning.html">进入 AI 学习</a>
+              <a href="./docs/解锁ai魔法-和爸爸一起走进智能未来.pdf" target="_blank" rel="noreferrer">打开原书</a>
+            </div>
+          </div>
+        </div>
+
+        <section class="game-panel olympic-hero-game" id="games" aria-labelledby="game-title">
+          <div class="game-topbar">
+            <div>
+              <span class="game-icon">🏓</span>
+              <h2 id="game-title">Kevin's Olympic Games</h2>
+              <small>乒乓球冠军赛</small>
+            </div>
+            <a class="expand-button" href="./kevin-olympic-games/pingpong/index.html" aria-label="打开完整乒乓球冠军赛"></a>
+          </div>
+          <iframe
+            class="olympic-game-frame"
+            title="Kevin's Olympic Games - 乒乓球冠军赛"
+            src="./kevin-olympic-games/pingpong/index.html"
+          ></iframe>
+          <div class="hero-game-link">
+            <a href="./kevin-olympic-games/pingpong/index.html">打开完整比赛</a>
+            <span>鼠标 / 触控移动，空格冲刺</span>
+          </div>
+        </section>
+      </section>
+
+      <section class="feature-ribbon" aria-label="核心入口">
+        <a class="feature-card blue" id="knowledge" href="./knowledge.html">
+          <span class="feature-visual book"></span>
+          <div>
+            <h2>中小学知识拆解</h2>
+            <p>覆盖小学到高中全学科知识点，拆解重难点、动画 + 例题讲解</p>
+          </div>
+          <b>›</b>
+        </a>
+        <a class="feature-card violet" id="ai" href="./ai-learning.html">
+          <span class="feature-visual brain">AI</span>
+          <div>
+            <h2>AI 学习</h2>
+            <p>阅读 AI 启蒙书、学习提示词、理解智能工具与未来能力</p>
+          </div>
+          <b>›</b>
+        </a>
+        <a class="feature-card green" href="./games.html">
+          <span class="feature-visual controller"></span>
+          <div>
+            <h2>奥林匹克小游戏</h2>
+            <p>边玩边学，知识融入互动游戏，闯关升级、收获知识与成就</p>
+          </div>
+          <b>›</b>
+        </a>
+        <a class="feature-card orange" id="people" href="./scientists.html">
+          <span class="feature-visual bust"></span>
+          <div>
+            <h2>科学人物馆</h2>
+            <p>走近科学巨匠，了解他们的故事、思想与影响，激发科学梦想</p>
+          </div>
+          <b>›</b>
+        </a>
+      </section>
+
+      <section class="content-grid content-grid-wide">
+        <section class="recommend-area" id="recommend" aria-labelledby="recommend-title">
+          <div class="section-title">
+            <div>
+              <p>为你推荐</p>
+              <h2 id="recommend-title">今天最适合继续探索的内容</h2>
+            </div>
+            <div class="filter-chips" aria-label="推荐筛选">
+              <button class="active" type="button">初二</button>
+              <button type="button">AI</button>
+              <button type="button">物理</button>
+              <button type="button">游戏</button>
+            </div>
+          </div>
+          <div class="recommend-cards" id="knowledge-list">
+            <article class="lesson-card blue-card">
+              <div>
+                <span>数学</span>
+                <h3>函数闯关</h3>
+                <p>用游戏掌握函数图像变化与性质</p>
+              </div>
+              <div class="card-visual chart-visual"></div>
+              <footer>
+                <small>难度 ★★☆☆☆</small>
+                <a class="card-button" href="./knowledge.html">去查看</a>
+              </footer>
+            </article>
+            <article class="lesson-card purple-card">
+              <div>
+                <span>AI 思维</span>
+                <h3>AI 幻觉侦探</h3>
+                <p>识别 AI 回答中的错误与不合理信息</p>
+              </div>
+              <div class="card-visual detective-visual"></div>
+              <footer>
+                <small>难度 ★★★☆☆</small>
+                <button type="button">去侦探</button>
+              </footer>
+            </article>
+            <article class="lesson-card amber-card" id="people-list">
+              <div>
+                <span>科学人物</span>
+                <h3>居里夫人</h3>
+                <p>探索放射性研究先驱的科学人生</p>
+              </div>
+              <div class="card-visual scientist-visual"></div>
+              <footer>
+                <small>适合 初中以上</small>
+                <a class="card-button" href="./scientists.html">去了解</a>
+              </footer>
+            </article>
+            <article class="lesson-card sky-card" id="opensource">
+              <div>
+                <span>开源 · 实践</span>
+                <h3>本周开源项目</h3>
+                <p>精选有趣开源项目，动手实践，提升能力</p>
+              </div>
+              <div class="card-visual laptop-visual"></div>
+              <footer>
+                <small>难度 ★★☆☆☆</small>
+                <a class="card-button" href="./projects.html">去查看</a>
+              </footer>
+            </article>
+          </div>
+        </section>
+      </section>
+
+      <section class="lower-grid">
+        <section class="frontier-box" aria-labelledby="frontier-summary-title">
+          <div class="box-heading">
+            <h2 id="frontier-summary-title">今日前沿</h2>
+            <a href="./frontier.html">更多前沿 →</a>
+          </div>
+          <div class="news-row">
+            <article class="news-card ai-news">
+              <span>AI 前沿</span>
+              <h3>多模态大模型如何理解世界？</h3>
+              <p>关联课内知识：信息与信息处理</p>
+            </article>
+            <article class="news-card robot-news">
+              <span>机器人前沿</span>
+              <h3>仿生机器鱼实现复杂水下机动</h3>
+              <p>关联课内知识：力与运动</p>
+            </article>
+            <article class="news-card space-news">
+              <span>太空前沿</span>
+              <h3>韦伯望远镜发现早期宇宙新星系</h3>
+              <p>关联课内知识：宇宙与天体</p>
+            </article>
+          </div>
+        </section>
+
+        <section class="map-box" id="map" aria-labelledby="map-title">
+          <div class="box-heading">
+            <h2 id="map-title">我的学习地图</h2>
+            <a href="#map">查看全部地图 →</a>
+          </div>
+          <div class="map-legend">
+            <span class="mastered">已掌握</span>
+            <span class="doing">进行中</span>
+            <span class="waiting">待解锁</span>
+          </div>
+          <div class="learning-path" aria-label="学习路径">
+            <div class="path-node mastered">
+              <span>π</span>
+              <strong>数学</strong>
+              <small>78%</small>
+              <button type="button">继续探索</button>
+            </div>
+            <div class="path-node mastered">
+              <span>⚛</span>
+              <strong>物理</strong>
+              <small>64%</small>
+              <button type="button">继续探索</button>
+            </div>
+            <div class="path-node doing">
+              <span>AI</span>
+              <strong>AI</strong>
+              <small>55%</small>
+              <button type="button">继续探索</button>
+            </div>
+            <div class="path-node locked">
+              <span>&lt;/&gt;</span>
+              <strong>编程</strong>
+              <small>40%</small>
+              <button type="button">继续探索</button>
+            </div>
+            <div class="path-node locked">
+              <span>◎</span>
+              <strong>科学人物</strong>
+              <small>32%</small>
+              <button type="button">继续探索</button>
+            </div>
+          </div>
+        </section>
+      </section>
+
+    </main>
+
+    <footer class="site-footer">
+      <p>星火 AI 科学馆 · 游戏化学习 × AI 智能辅导 × 科学探索</p>
+    </footer>
+
+    <div class="auth-modal" id="authModal" aria-hidden="true">
+      <div class="auth-panel" role="dialog" aria-modal="true" aria-labelledby="authTitle">
+        <div class="auth-topbar">
+          <div>
+            <p>账号入口</p>
+            <h2 id="authTitle">登录星火科学馆</h2>
+          </div>
+          <button class="icon-close" id="authClose" type="button" aria-label="关闭"></button>
+        </div>
+        <form class="auth-form" id="loginForm">
+          <label>
+            <span>账号</span>
+            <input name="account" type="text" autocomplete="username" placeholder="邮箱或手机号" />
+          </label>
+          <label>
+            <span>密码</span>
+            <input name="password" type="password" autocomplete="current-password" placeholder="输入密码" />
+          </label>
+          <button class="auth-submit" type="submit">登录</button>
+          <button class="auth-switch" id="switchToRegister" type="button">新用户注册</button>
+        </form>
+        <form class="auth-form hidden" id="registerForm">
+          <label>
+            <span>昵称</span>
+            <input name="nickname" type="text" autocomplete="nickname" placeholder="星火少年" />
+          </label>
+          <label>
+            <span>邮箱</span>
+            <input name="email" type="email" autocomplete="email" placeholder="可选" />
+          </label>
+          <label>
+            <span>手机号</span>
+            <input name="phone" type="tel" autocomplete="tel" placeholder="可选" />
+          </label>
+          <label>
+            <span>密码</span>
+            <input name="password" type="password" autocomplete="new-password" placeholder="至少 6 位" />
+          </label>
+          <div class="auth-inline">
+            <label>
+              <span>年级</span>
+              <select name="grade">
+                <option value="">未设置</option>
+                <option value="1">1</option><option value="2">2</option><option value="3">3</option>
+                <option value="4">4</option><option value="5">5</option><option value="6">6</option>
+                <option value="7">7</option><option value="8">8</option><option value="9">9</option>
+                <option value="10">10</option><option value="11">11</option><option value="12">12</option>
+              </select>
+            </label>
+            <label>
+              <span>阶段</span>
+              <select name="school_stage">
+                <option value="">未设置</option>
+                <option value="primary">小学</option>
+                <option value="middle">初中</option>
+                <option value="high">高中</option>
+              </select>
+            </label>
+          </div>
+          <button class="auth-submit" type="submit">注册</button>
+          <button class="auth-switch" id="switchToLogin" type="button">返回登录</button>
+        </form>
+        <p class="auth-message" id="authMessage"></p>
+      </div>
+    </div>
+
+    <script src="./app.js?v=20260506a"></script>
+  </body>
+</html>

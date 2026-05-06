@@ -1,0 +1,122 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>今日前沿 · 星火 AI 科学馆</title>
+    <link rel="stylesheet" href="./styles.css?v=20260505a" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html#home" aria-label="星火 AI 科学馆首页">
+        <span class="brand-star">✦</span>
+        <span>星火 AI 科学馆</span>
+      </a>
+      <nav class="main-nav" aria-label="主导航">
+        <a href="./index.html#home">首页</a>
+        <a href="./ai-learning.html">AI 学习</a>
+        <a href="./hermes.html">Hermes 对话</a>
+        <a class="active" href="./frontier.html">今日前沿</a>
+        <a href="./projects.html">开源项目</a>
+        <a href="./knowledge.html">中小学知识</a>
+        <a href="./games.html">奥林匹克小游戏</a>
+        <a href="./scientists.html">科学人物</a>
+        <a href="./index.html#map">我的学习地图</a>
+        <a href="./contact.html">联系我</a>
+      </nav>
+      <div class="header-actions">
+        <a class="home-button" href="./index.html#home">返回首页</a>
+      </div>
+    </header>
+
+    <main class="page-shell frontier-page">
+      <section class="frontier-daily" aria-labelledby="frontier-daily-title">
+        <div class="frontier-header">
+          <div>
+            <p>每日 2 小时自动更新</p>
+            <h1 id="frontier-daily-title">今日前沿情报站</h1>
+            <span>从 AI 研究、机器人、太空探索和开源社区中筛选新消息，转写成中小学生能看懂的科学摘要。</span>
+          </div>
+          <a href="./index.html#recommend">查看推荐学习 →</a>
+        </div>
+
+        <div class="frontier-tabs" aria-label="前沿分类">
+          <button class="active" type="button" data-frontier-filter="all">全部</button>
+          <button type="button" data-frontier-filter="ai">AI 前沿</button>
+          <button type="button" data-frontier-filter="robot">机器人</button>
+          <button type="button" data-frontier-filter="space">太空</button>
+          <button type="button" data-frontier-filter="opensource">开源项目</button>
+        </div>
+
+        <section class="frontier-news-today" aria-label="当天新闻">
+          <div class="frontier-news-heading">
+            <div>
+              <p>当天新闻</p>
+              <h2>今天值得关注的科学与 AI 消息</h2>
+            </div>
+            <span>已转写成青少年摘要</span>
+          </div>
+          <div class="frontier-news-grid">
+            <article>
+              <span>AI 前沿</span>
+              <h3>多模态模型如何同时看图、听声音和读文字</h3>
+              <p>它像一个能同时看图、听课、做笔记的助手，但仍需要验证来源和事实。</p>
+            </article>
+            <article>
+              <span>机器人</span>
+              <h3>仿生机器人用鱼类动作提升水下稳定性</h3>
+              <p>研究者模仿鱼尾摆动，让机器人在复杂水流中更灵活地转向。</p>
+            </article>
+            <article>
+              <span>太空</span>
+              <h3>新观测数据帮助理解早期星系形成</h3>
+              <p>望远镜看到的古老光线，能帮助我们理解宇宙早期发生了什么。</p>
+            </article>
+          </div>
+        </section>
+
+        <div class="frontier-layout">
+          <article class="frontier-lead" data-frontier-category="ai">
+            <span>AI 前沿 · 青少年摘要</span>
+            <h2>多模态大模型正在学习把文字、图片和声音放在一起理解</h2>
+            <p>最新 AI 模型不只是“读文字”，还会同时观察图片、听声音，再把不同信息合在一起做判断。可以把它想成一个会看图、听课、做笔记的学习助手，但它仍然可能出错，所以需要学会验证来源。</p>
+            <dl>
+              <div><dt>关联知识</dt><dd>信息与信息处理、数据表示</dd></div>
+              <div><dt>适合年级</dt><dd>小学高年级到初中</dd></div>
+              <div><dt>来源状态</dt><dd>自动抓取 · 待人工审核后发布</dd></div>
+            </dl>
+          </article>
+
+          <div class="frontier-list" aria-label="分类前沿摘要列表">
+            <article class="frontier-item" data-frontier-category="robot">
+              <span>机器人</span>
+              <h2>仿生机器鱼让水下探测更灵活</h2>
+              <p>研究者模仿鱼尾摆动设计机器人，让它在复杂水流里更稳定地转弯和前进。</p>
+              <small>关联课内知识：力与运动</small>
+            </article>
+            <article class="frontier-item" data-frontier-category="space">
+              <span>太空</span>
+              <h2>望远镜继续刷新早期宇宙图像</h2>
+              <p>新的观测数据帮助科学家理解星系如何形成，也让“光年”和“宇宙年龄”变得更具体。</p>
+              <small>关联课内知识：宇宙与天体</small>
+            </article>
+            <article class="frontier-item" data-frontier-category="opensource">
+              <span>开源项目</span>
+              <h2>适合学生试玩的 AI 小工具项目</h2>
+              <p>开源社区每天都有新项目，可以从 README、示例和任务拆解开始学习真实工程。</p>
+              <small>关联课内知识：算法、工程实践</small>
+            </article>
+            <article class="frontier-item" data-frontier-category="ai">
+              <span>AI 前沿</span>
+              <h2>小模型也能在手机和浏览器里运行</h2>
+              <p>模型压缩和端侧推理让 AI 不一定总在云端工作，隐私和速度都会变得更重要。</p>
+              <small>关联课内知识：计算资源、数据安全</small>
+            </article>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <script src="./frontier.js?v=20260502b"></script>
+  </body>
+</html>

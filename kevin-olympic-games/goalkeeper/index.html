@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kevin's Olympic — Goalkeeper</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Bungee+Shade&family=Bungee&family=Righteous&family=Anybody:wght@400;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a1a0a;overflow:hidden;height:100vh;width:100vw;display:flex;align-items:center;justify-content:center;font-family:'Anybody',sans-serif;user-select:none}
+#wrap{position:relative;width:100%;max-width:940px;aspect-ratio:16/10}
+canvas{width:100%;height:100%;display:block;border-radius:8px}
+#overlay{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,8,0,0.95);border-radius:8px;z-index:10;transition:opacity 0.5s}
+#overlay.hidden{opacity:0;pointer-events:none}
+#overlay h1{font-family:'Bungee Shade',sans-serif;font-size:clamp(20px,4.5vw,44px);color:#fff;letter-spacing:2px;background:linear-gradient(135deg,#44ff66,#00cc44,#ffdd00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:2px}
+#overlay .sub{color:#5a8a5a;font-size:clamp(10px,1.5vw,13px);letter-spacing:4px;text-transform:uppercase;margin-bottom:14px}
+.emoji-row{font-size:clamp(28px,5vw,50px);margin:6px 0 8px;letter-spacing:8px}
+#overlay button{font-family:'Bungee',sans-serif;font-size:clamp(12px,2vw,17px);padding:13px 36px;border:none;border-radius:6px;cursor:pointer;color:#fff;letter-spacing:2px;text-transform:uppercase;background:linear-gradient(135deg,#228b22,#1a6b1a);box-shadow:0 0 25px rgba(34,139,34,0.3),0 5px 18px rgba(0,0,0,0.4);transition:all 0.2s;margin:6px}
+#overlay button:hover{transform:scale(1.06);box-shadow:0 0 35px rgba(34,180,34,0.5)}
+#result-msg{font-family:'Bungee',sans-serif;font-size:clamp(13px,2.5vw,22px);color:#ffdd00;text-shadow:0 0 12px #ffdd0066;text-align:center;margin-bottom:12px;line-height:1.5}
+#match-info{background:linear-gradient(135deg,#0a200a,#143014);border:2px solid #33aa3344;border-radius:8px;padding:14px 24px;margin:10px 0;text-align:center;box-shadow:0 4px 20px rgba(0,100,0,0.15);max-width:320px}
+#match-info h2{font-family:'Righteous',sans-serif;color:#44dd55;font-size:clamp(14px,2.2vw,20px);letter-spacing:3px;margin-bottom:4px}
+#match-info .opponent{font-size:clamp(24px,4vw,40px);margin:6px 0}
+#match-info .opp-name{font-family:'Bungee',sans-serif;color:#ffcc00;font-size:clamp(14px,2vw,18px)}
+#match-info .desc{color:#5a9a5a;font-size:clamp(9px,1.3vw,11px);letter-spacing:1px;margin-top:4px}
+#hud{position:absolute;top:0;left:0;right:0;padding:8px 16px;z-index:5;pointer-events:none;display:flex;justify-content:space-between;align-items:flex-start}
+#hud-left{font-family:'Bungee',sans-serif;font-size:clamp(12px,2vw,20px);color:#00ddff;text-shadow:0 0 10px #00ccff44}
+#hud-center{text-align:center}
+#hud-round{font-family:'Righteous',sans-serif;color:#ffcc00;font-size:clamp(9px,1.3vw,12px);letter-spacing:2px}
+#hud-wave{font-family:'Anybody',sans-serif;color:#88bb88;font-size:clamp(8px,1.1vw,10px);margin-top:1px}
+#hud-right{font-family:'Bungee',sans-serif;font-size:clamp(12px,2vw,20px);color:#ff5544;text-shadow:0 0 10px #ff554444}
+#commentary{position:absolute;bottom:32px;left:0;right:0;text-align:center;z-index:6;pointer-events:none}
+#commentary-msg{font-family:'Righteous',sans-serif;font-size:clamp(11px,1.6vw,15px);color:#44ffaa;text-shadow:0 0 10px #00ff6644;opacity:0;transition:opacity 0.3s;letter-spacing:1px}
+#instructions{position:absolute;bottom:8px;left:0;right:0;text-align:center;color:#2a4a2a;font-size:clamp(9px,1.2vw,11px);letter-spacing:1px;z-index:5;pointer-events:none}
+.site-back{position:fixed;top:14px;left:14px;z-index:30;min-height:36px;padding:8px 12px;border:1px solid rgba(255,255,255,.24);border-radius:6px;background:rgba(0,0,0,.52);color:#fff;text-decoration:none;font:700 13px Arial,sans-serif;letter-spacing:1px;backdrop-filter:blur(8px)}
+.site-back:hover{background:rgba(34,139,34,.72)}
+</style>
+</head>
+<body>
+<a class="site-back" href="../../games.html">← 返回小游戏</a>
+<div id="wrap">
+<canvas id="c"></canvas>
+<div id="hud">
+  <div id="hud-left">🧤 SAVES <span id="hud-saves">0</span></div>
+  <div id="hud-center"><div id="hud-round">MATCH 1 / 5</div><div id="hud-wave">SHOT 1</div></div>
+  <div id="hud-right">GOALS <span id="hud-goals">0</span> ⚽</div>
+</div>
+<div id="commentary"><div id="commentary-msg"></div></div>
+<div id="overlay">
+  <div class="emoji-row">🧤⚽🥅</div>
+  <h1>KEVIN'S OLYMPIC</h1>
+  <div class="sub">Goalkeeper Challenge</div>
+  <div id="match-info">
+    <h2>VS</h2>
+    <div class="opponent" id="opp-emoji">🇧🇷</div>
+    <div class="opp-name" id="opp-label">BRAZIL</div>
+    <div class="desc" id="match-desc">Save their shots! 10 shots per match.</div>
+  </div>
+  <div id="result-msg" style="display:none"></div>
+  <button id="startBtn">GUARD THE GOAL</button>
+</div>
+<div id="instructions">← → or A/D to move &nbsp;|&nbsp; SPACE or W or ↑ to JUMP &nbsp;|&nbsp; Mouse/Touch to dive</div>
+</div>
+
+<script>
+const C=document.getElementById('c'),X=C.getContext('2d');
+const W=940,H=588;C.width=W;C.height=H;
+const overlay=document.getElementById('overlay'),startBtn=document.getElementById('startBtn');
+const resultMsg=document.getElementById('result-msg');
+const hudSaves=document.getElementById('hud-saves'),hudGoals=document.getElementById('hud-goals');
+const hudRound=document.getElementById('hud-round'),hudWave=document.getElementById('hud-wave');
+const oppEmoji=document.getElementById('opp-emoji'),oppLabel=document.getElementById('opp-label');
+const matchDesc=document.getElementById('match-desc');
+const commentaryMsg=document.getElementById('commentary-msg');
+
+const OPPONENTS=[
+  {name:'BRAZIL',emoji:'🇧🇷',color:'#ffdd00',shots:8,speed:[3,5],curve:[0,0.3],delay:[1800,2500]},
+  {name:'GERMANY',emoji:'🇩🇪',color:'#dd0000',shots:10,speed:[4,6],curve:[0,0.5],delay:[1500,2200]},
+  {name:'ARGENTINA',emoji:'🇦🇷',color:'#66bbff',shots:10,speed:[4.5,7],curve:[0.1,0.7],delay:[1200,2000]},
+  {name:'FRANCE',emoji:'🇫🇷',color:'#0044cc',shots:12,speed:[5,8],curve:[0.2,0.9],delay:[1000,1800]},
+  {name:'JAPAN',emoji:'🇯🇵',color:'#dd0044',shots:12,speed:[5.5,9],curve:[0.3,1.2],delay:[800,1500]},
+];
+
+const SAVE_LINES=["What a save!","Kevin blocks it!","Incredible reflexes!","No way through!","The wall of Kevin!","Denied!","Spectacular diving save!","Kevin reads it perfectly!","Cat-like reflexes!","Hands of steel!"];
+const GOAL_LINES=["Goal!","It slips past Kevin!","In the back of the net!","They score!","Kevin couldn't reach it!","Past the keeper!"];
+const MISS_LINES=["Wide!","Over the bar!","Off target!","They miss completely!","That one's in the stands!"];
+
+let matchIdx=0,running=false,phase='idle';
+let frame=0,saves=0,goals=0,shotNum=0,totalShots=8;
+let shotTimer=0,betweenShots=true;
+
+// Goal geometry (seen from behind, Kevin faces forward)
+const GROUND_Y=460;
+const GOAL_TOP=160;
+const GOAL_LEFT=220;
+const GOAL_RIGHT=720;
+const GOAL_W=GOAL_RIGHT-GOAL_LEFT;
+const GOAL_H=GROUND_Y-GOAL_TOP;
+const POST_W=10;
+const BAR_H=10;
+
+// Kevin the goalkeeper
+let kevin={
+  x:W/2,y:GROUND_Y,
+  w:50,h:80,
+  vx:0,vy:0,
+  grounded:true,
+  diving:false,diveDir:0,diveTimer:0,
+  speed:6,
+  jumpPower:-14,
+  gravity:0.6,
+  saveAnim:0, // flash on save
+  bodyAngle:0,
+};
+
+// Ball
+let ball={
+  x:W/2,y:H+50,z:0,
+  vx:0,vy:0,vz:0,
+  curve:0,
+  active:false,
+  scale:1,
+  trail:[],
+};
+
+let particles=[];
+let screenShake={x:0,y:0,i:0};
+let crowdExcitement=0;
+let netRipple=0;
+let announcements=[];
+let keys_={};
+let mouseX=W/2;
+
+// Shooter
+let shooter={x:W/2,y:H+30,visible:false,walkTarget:0,emoji:'🏃'};
+
+function initMatch(){
+  const opp=OPPONENTS[matchIdx];
+  saves=0;goals=0;shotNum=0;
+  totalShots=opp.shots;
+  hudSaves.textContent='0';hudGoals.textContent='0';
+  hudRound.textContent=`MATCH ${matchIdx+1} / ${OPPONENTS.length}`;
+  hudWave.textContent=`SHOT 1 / ${totalShots}`;
+  oppEmoji.textContent=opp.emoji;oppLabel.textContent=opp.name;
+  matchDesc.textContent=`Save their shots! ${totalShots} shots to face.`;
+  resetKevin();
+  ball.active=false;
+  betweenShots=true;
+  shotTimer=90;
+  announcements=[];particles=[];
+}
+
+function resetKevin(){
+  kevin.x=W/2;kevin.y=GROUND_Y;kevin.vx=0;kevin.vy=0;
+  kevin.grounded=true;kevin.diving=false;kevin.diveDir=0;kevin.diveTimer=0;
+  kevin.saveAnim=0;kevin.bodyAngle=0;
+}
+
+function fireShot(){
+  const opp=OPPONENTS[matchIdx];
+  betweenShots=false;
+  shotNum++;
+  hudWave.textContent=`SHOT ${shotNum} / ${totalShots}`;
+
+  // Shooter walks up
+  shooter.visible=true;
+  shooter.x=W/2+(Math.random()-0.5)*200;
+  shooter.y=H+10;
+
+  // Determine target
+  // Aim at random spot in goal, biased toward corners at higher levels
+  const cornerBias=0.3+matchIdx*0.12;
+  let targetX,targetY;
+  if(Math.random()<cornerBias){
+    // Corner shot
+    targetX=Math.random()<0.5?GOAL_LEFT+40+Math.random()*60:GOAL_RIGHT-40-Math.random()*60;
+    targetY=Math.random()<0.4?GOAL_TOP+30+Math.random()*40:GROUND_Y-20-Math.random()*60;
+  }else{
+    targetX=GOAL_LEFT+60+Math.random()*(GOAL_W-120);
+    targetY=GOAL_TOP+40+Math.random()*(GOAL_H-80);
+  }
+
+  // Ball start from shooter
+  ball.x=shooter.x;
+  ball.y=H+20;
+  ball.z=0;
+  ball.scale=0.5;
+
+  // Calculate velocity to reach target
+  const dx=targetX-ball.x;
+  const dy=targetY-ball.y;
+  const spd=opp.speed[0]+Math.random()*(opp.speed[1]-opp.speed[0]);
+  const dist=Math.hypot(dx,dy);
+  ball.vx=dx/dist*spd;
+  ball.vy=dy/dist*spd;
+  ball.vz=0;
+  ball.curve=(Math.random()-0.5)*(opp.curve[0]+Math.random()*(opp.curve[1]-opp.curve[0]));
+  ball.active=true;
+  ball.trail=[];
+
+  commentary("Here comes the shot!");
+}
+
+function checkSave(){
+  if(!ball.active)return;
+  const bx=ball.x,by=ball.y;
+
+  // Kevin hitbox (wider when diving)
+  const kw=kevin.diving?kevin.w*2.2:kevin.w*1.2;
+  const kh=kevin.h*1.1;
+  const kx=kevin.x;
+  const ky=kevin.y-kh/2;
+  const diveOffset=kevin.diving?kevin.diveDir*40*Math.min(1,kevin.diveTimer/8):0;
+
+  const kevinLeft=kx-kw/2+diveOffset;
+  const kevinRight=kx+kw/2+diveOffset;
+  const kevinTop=ky-20;
+  const kevinBottom=kevin.y+10;
+
+  const saved=bx>kevinLeft&&bx<kevinRight&&by>kevinTop&&by<kevinBottom;
+
+  // Is it in the goal?
+  const inGoal=bx>GOAL_LEFT+POST_W&&bx<GOAL_RIGHT-POST_W&&by>GOAL_TOP+BAR_H&&by<GROUND_Y;
+  // Hit post?
+  const hitPost=(bx<=GOAL_LEFT+POST_W+5||bx>=GOAL_RIGHT-POST_W-5)&&by>GOAL_TOP&&by<GROUND_Y;
+  const hitBar=by<=GOAL_TOP+BAR_H+5&&bx>GOAL_LEFT&&bx<GOAL_RIGHT;
+  // Missed entirely
+  const missed=bx<GOAL_LEFT-20||bx>GOAL_RIGHT+20||by<GOAL_TOP-30;
+
+  if(saved&&(inGoal||hitPost||hitBar)){
+    // SAVE!
+    ball.active=false;
+    saves++;hudSaves.textContent=saves;
+    kevin.saveAnim=1;
+    commentary(SAVE_LINES[Math.floor(Math.random()*SAVE_LINES.length)]);
+    announce('SAVE!','#00ffaa',1.2);
+    emitParticles(bx,by,'#00ffaa',30,6,4);
+    emitParticles(bx,by,'#ffffff',15,4,2);
+    screenShake.i=12;crowdExcitement=1;
+    nextShot();
+  }else if(hitPost||hitBar){
+    ball.active=false;
+    commentary(Math.random()<0.5?"Off the post!":"Off the bar!");
+    announce('POST!','#ffaa00',1);
+    emitParticles(bx,by,'#ffffff',25,5,3);
+    screenShake.i=10;
+    nextShot();
+  }else if(missed){
+    ball.active=false;
+    commentary(MISS_LINES[Math.floor(Math.random()*MISS_LINES.length)]);
+    announce('MISS!','#88bbff',0.8);
+    nextShot();
+  }else if(inGoal&&by<GROUND_Y-5){
+    // Check one more time for save
+    if(saved){
+      ball.active=false;
+      saves++;hudSaves.textContent=saves;
+      kevin.saveAnim=1;
+      commentary(SAVE_LINES[Math.floor(Math.random()*SAVE_LINES.length)]);
+      announce('SAVE!','#00ffaa',1.2);
+      emitParticles(bx,by,'#00ffaa',30,6,4);
+      screenShake.i=12;crowdExcitement=1;
+      nextShot();
+    }
+  }
+}
+
+function goalScored(){
+  if(!ball.active)return;
+  ball.active=false;
+  goals++;hudGoals.textContent=goals;
+  netRipple=1;
+  commentary(GOAL_LINES[Math.floor(Math.random()*GOAL_LINES.length)]);
+  announce('GOAL!','#ff4444',1.3);
+  emitParticles(ball.x,ball.y,'#ff4444',25,5,3);
+  emitParticles(ball.x,ball.y,'#ffdd00',15,3,2);
+  screenShake.i=15;
+  nextShot();
+}
+
+function nextShot(){
+  shooter.visible=false;
+  if(shotNum>=totalShots){
+    setTimeout(()=>endMatch(),1500);
+  }else{
+    betweenShots=true;
+    shotTimer=80+Math.random()*40;
+    setTimeout(()=>resetKevin(),800);
+  }
+}
+
+function endMatch(){
+  phase='idle';running=false;
+  resultMsg.style.display='block';
+  const opp=OPPONENTS[matchIdx];
+  const saveRate=Math.round(saves/totalShots*100);
+
+  if(goals<=Math.floor(totalShots*0.3)){
+    // Win — allowed 30% or fewer goals
+    if(matchIdx>=OPPONENTS.length-1){
+      resultMsg.innerHTML=`🥇 OLYMPIC CHAMPION!<br>Kevin saved ${saves}/${totalShots} shots (${saveRate}%)<br>👑 The Golden Glove is Kevin's!`;
+      matchIdx=0;startBtn.textContent='NEW TOURNAMENT';
+    }else{
+      const medals=['🥉','🥉','🥈','🥈','🥇'];
+      resultMsg.innerHTML=`🏆 MATCH WON! ${medals[matchIdx]}<br>Saves: ${saves}/${totalShots} (${saveRate}%)<br>Only ${goals} goals conceded!`;
+      matchIdx++;startBtn.textContent='NEXT OPPONENT';
+    }
+  }else{
+    resultMsg.innerHTML=`😤 TOO MANY GOALS!<br>Saves: ${saves}/${totalShots} (${saveRate}%)<br>${goals} goals conceded — need ≤${Math.floor(totalShots*0.3)}`;
+    startBtn.textContent='RETRY';
+  }
+  setTimeout(()=>overlay.classList.remove('hidden'),800);
+}
+
+function emitParticles(x,y,color,count,spd,sz){
+  for(let i=0;i<count;i++){const a=Math.random()*Math.PI*2,v=Math.random()*spd+1;particles.push({x,y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-1,life:1,color,size:Math.random()*sz+1,decay:0.015+Math.random()*0.02});}
+}
+function announce(text,color,size){announcements.push({text,color,y:H/2-40,alpha:2,scale:1.5*(size||1)});}
+function commentary(msg){commentaryMsg.textContent='📢 '+msg;commentaryMsg.style.opacity='1';clearTimeout(commentary._t);commentary._t=setTimeout(()=>commentaryMsg.style.opacity='0',2500);}
+
+// ======== UPDATE ========
+function update(){
+  frame++;
+  if(!running)return;
+
+  // Between shots timer
+  if(betweenShots){
+    shotTimer--;
+    if(shotTimer<=0){fireShot();}
+  }
+
+  // Kevin movement
+  let moveDir=0;
+  if(keys_['a']||keys_['arrowleft'])moveDir=-1;
+  if(keys_['d']||keys_['arrowright'])moveDir=1;
+
+  // Mouse/touch influence
+  if(!kevin.diving){
+    const mousePull=(mouseX-kevin.x)*0.04;
+    kevin.vx=moveDir*kevin.speed+mousePull;
+  }
+
+  kevin.x+=kevin.vx;
+  kevin.x=Math.max(GOAL_LEFT-20,Math.min(GOAL_RIGHT+20,kevin.x));
+  if(!kevin.diving)kevin.vx*=0.7;
+
+  // Jump
+  if((keys_['w']||keys_[' ']||keys_['arrowup'])&&kevin.grounded&&!kevin.diving){
+    kevin.vy=kevin.jumpPower;
+    kevin.grounded=false;
+    emitParticles(kevin.x,kevin.y,'#44aa44',8,3,2);
+  }
+
+  // Gravity
+  if(!kevin.grounded){
+    kevin.vy+=kevin.gravity;
+    kevin.y+=kevin.vy;
+    if(kevin.y>=GROUND_Y){
+      kevin.y=GROUND_Y;kevin.vy=0;kevin.grounded=true;
+      if(kevin.diving){kevin.diveTimer=0;kevin.diving=false;kevin.bodyAngle=0;}
+    }
+  }
+
+  // Dive (Q/E or mouse click sides)
+  if(kevin.diving){
+    kevin.diveTimer++;
+    kevin.x+=kevin.diveDir*kevin.speed*1.3;
+    kevin.bodyAngle=kevin.diveDir*Math.min(1,kevin.diveTimer/6)*0.7;
+    kevin.x=Math.max(GOAL_LEFT-30,Math.min(GOAL_RIGHT+30,kevin.x));
+    if(kevin.diveTimer>20&&kevin.grounded){kevin.diving=false;kevin.bodyAngle*=0.9;}
+  }
+
+  // Save anim decay
+  if(kevin.saveAnim>0)kevin.saveAnim*=0.96;
+
+  // Ball update
+  if(ball.active){
+    ball.x+=ball.vx;
+    ball.y+=ball.vy;
+    ball.vx+=ball.curve*0.016;
+    // Scale grows as ball approaches
+    const progress=1-(ball.y-GOAL_TOP)/(H+20-GOAL_TOP);
+    ball.scale=0.5+progress*0.8;
+
+    ball.trail.push({x:ball.x,y:ball.y,s:ball.scale,life:1});
+    if(ball.trail.length>18)ball.trail.shift();
+
+    // Check if ball is in goal area
+    if(ball.y<GROUND_Y&&ball.y>GOAL_TOP){
+      checkSave();
+    }
+    // Ball passed through
+    if(ball.y<GOAL_TOP-10&&ball.active){
+      if(ball.x>GOAL_LEFT+POST_W&&ball.x<GOAL_RIGHT-POST_W){
+        goalScored();
+      }else{
+        ball.active=false;
+        commentary(MISS_LINES[Math.floor(Math.random()*MISS_LINES.length)]);
+        announce('WIDE!','#88bbff',0.8);
+        nextShot();
+      }
+    }
+  }
+
+  // Particles
+  particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.vy+=0.04;p.life-=p.decay;});
+  particles=particles.filter(p=>p.life>0);
+
+  // Announcements
+  announcements.forEach(a=>{a.y-=1.5;a.alpha-=0.02;a.scale+=0.004;});
+  announcements=announcements.filter(a=>a.alpha>0);
+
+  // Crowd
+  if(crowdExcitement>0)crowdExcitement*=0.993;
+  if(netRipple>0)netRipple*=0.97;
+
+  // Shake
+  if(screenShake.i>0){screenShake.x=(Math.random()-0.5)*screenShake.i;screenShake.y=(Math.random()-0.5)*screenShake.i;screenShake.i*=0.87;if(screenShake.i<0.3)screenShake.i=0;}else{screenShake.x=0;screenShake.y=0;}
+}
+
+// ======== DRAW ========
+function draw(){
+  X.save();X.translate(screenShake.x,screenShake.y);
+
+  drawSky();
+  drawCrowd();
+  drawGoalBack();
+  drawNet();
+  drawField();
+  drawGoalFront();
+  drawBall();
+  drawKevin();
+  drawShooter();
+  drawParticles();
+  drawAnnouncements();
+  drawShotIndicator();
+
+  X.restore();
+}
+
+function drawSky(){
+  const g=X.createLinearGradient(0,0,0,H*0.35);
+  g.addColorStop(0,'#0a1428');g.addColorStop(1,'#1a3020');
+  X.fillStyle=g;X.fillRect(0,0,W,H);
+  // Stadium lights
+  for(let i=0;i<5;i++){
+    const lx=80+i*(W-160)/4;
+    const lg=X.createRadialGradient(lx,5,0,lx,5,70);
+    lg.addColorStop(0,'rgba(255,255,200,0.12)');lg.addColorStop(1,'transparent');
+    X.fillStyle=lg;X.beginPath();X.arc(lx,5,70,0,Math.PI*2);X.fill();
+  }
+}
+
+function drawCrowd(){
+  const crowdY=35;
+  X.globalAlpha=0.25+crowdExcitement*0.25;
+  for(let i=0;i<W;i+=5){
+    const ch=18+Math.sin(i*0.07+frame*0.025)*3+Math.sin(i*0.17)*3;
+    const bounce=crowdExcitement>0.05?Math.sin(frame*0.15+i*0.12)*crowdExcitement*8:0;
+    X.fillStyle=`hsl(${(i*2.5+frame*0.3)%360},25%,45%)`;
+    X.fillRect(i,crowdY-bounce,4,ch);
+  }
+  X.globalAlpha=1;
+  X.fillStyle='#1a2a1a';X.fillRect(0,crowdY+22,W,5);
+}
+
+function drawGoalBack(){
+  // Goal depth (back net shadow)
+  X.fillStyle='rgba(0,0,0,0.3)';
+  const depth=40;
+  X.beginPath();
+  X.moveTo(GOAL_LEFT+POST_W,GOAL_TOP+BAR_H);
+  X.lineTo(GOAL_LEFT+POST_W+depth*0.3,GOAL_TOP-depth*0.3);
+  X.lineTo(GOAL_RIGHT-POST_W-depth*0.3,GOAL_TOP-depth*0.3);
+  X.lineTo(GOAL_RIGHT-POST_W,GOAL_TOP+BAR_H);
+  X.fill();
+}
+
+function drawNet(){
+  X.save();
+  const nL=GOAL_LEFT+POST_W+2,nR=GOAL_RIGHT-POST_W-2;
+  const nT=GOAL_TOP+BAR_H+2,nB=GROUND_Y-2;
+  X.strokeStyle='rgba(200,200,200,0.1)';X.lineWidth=0.5;
+  for(let nx=nL;nx<nR;nx+=14){
+    const ripple=netRipple*Math.sin((nx-nL)*0.06+frame*0.12)*6;
+    X.beginPath();X.moveTo(nx,nT);X.lineTo(nx+ripple,nB);X.stroke();
+  }
+  for(let ny=nT;ny<nB;ny+=14){
+    const ripple=netRipple*Math.sin((ny-nT)*0.08+frame*0.15)*5;
+    X.beginPath();X.moveTo(nL,ny);X.lineTo(nR,ny+ripple);X.stroke();
+  }
+  X.restore();
+}
+
+function drawField(){
+  const gg=X.createLinearGradient(0,GROUND_Y-10,0,H);
+  gg.addColorStop(0,'#1a6b1a');gg.addColorStop(0.3,'#228b22');gg.addColorStop(1,'#1a5a1a');
+  X.fillStyle=gg;X.fillRect(0,GROUND_Y-10,W,H-GROUND_Y+10);
+
+  // Grass stripes
+  for(let i=0;i<6;i++){
+    X.fillStyle=i%2===0?'rgba(255,255,255,0.015)':'rgba(0,0,0,0.015)';
+    X.fillRect(0,GROUND_Y+i*22,W,22);
+  }
+
+  // Penalty spot
+  X.fillStyle='rgba(255,255,255,0.3)';
+  X.beginPath();X.arc(W/2,GROUND_Y+80,3,0,Math.PI*2);X.fill();
+
+  // Goal line
+  X.strokeStyle='rgba(255,255,255,0.15)';X.lineWidth=2;
+  X.beginPath();X.moveTo(GOAL_LEFT-30,GROUND_Y);X.lineTo(GOAL_RIGHT+30,GROUND_Y);X.stroke();
+}
+
+function drawGoalFront(){
+  X.save();
+  X.shadowColor='#ffffff';X.shadowBlur=3;
+  X.fillStyle='#ffffff';
+  // Left post
+  X.fillRect(GOAL_LEFT,GOAL_TOP,POST_W,GOAL_H);
+  // Right post
+  X.fillRect(GOAL_RIGHT-POST_W,GOAL_TOP,POST_W,GOAL_H);
+  // Crossbar
+  X.fillRect(GOAL_LEFT,GOAL_TOP,GOAL_W,BAR_H);
+  X.shadowBlur=0;
+
+  // Post highlights
+  X.fillStyle='rgba(255,255,255,0.3)';
+  X.fillRect(GOAL_LEFT+2,GOAL_TOP,3,GOAL_H);
+  X.fillRect(GOAL_RIGHT-POST_W+2,GOAL_TOP,3,GOAL_H);
+  X.fillRect(GOAL_LEFT,GOAL_TOP+2,GOAL_W,3);
+  X.restore();
+}
+
+function drawKevin(){
+  X.save();
+  X.translate(kevin.x,kevin.y);
+  X.rotate(kevin.bodyAngle);
+
+  const flash=kevin.saveAnim>0.1;
+  const glow=flash?20:0;
+
+  // Shadow
+  X.fillStyle='rgba(0,0,0,0.2)';
+  X.beginPath();X.ellipse(0,5,25,6,0,0,Math.PI*2);X.fill();
+
+  // Legs
+  X.strokeStyle='#1a1a3a';X.lineWidth=6;
+  const legSpread=kevin.diving?15:8;
+  const legBend=kevin.grounded?0:Math.sin(frame*0.2)*5;
+  X.beginPath();X.moveTo(-legSpread,0);X.lineTo(-legSpread-legBend,-25);X.stroke();
+  X.beginPath();X.moveTo(legSpread,0);X.lineTo(legSpread+legBend,-25);X.stroke();
+
+  // Body
+  if(flash){X.shadowColor='#00ffaa';X.shadowBlur=glow;}
+  X.fillStyle=flash?'#00ffaa':'#ffcc00';
+  X.beginPath();X.roundRect(-15,-65,30,45,4);X.fill();
+
+  // Number
+  X.font="bold 16px 'Bungee',sans-serif";X.textAlign='center';X.textBaseline='middle';
+  X.fillStyle='#1a1a3a';X.fillText('1',0,-43);
+
+  // Head
+  X.fillStyle='#ffddaa';
+  X.beginPath();X.arc(0,-72,12,0,Math.PI*2);X.fill();
+
+  // Hair
+  X.fillStyle='#4a2a00';
+  X.beginPath();X.arc(0,-76,10,Math.PI,0);X.fill();
+
+  // Eyes
+  X.fillStyle='#222';
+  X.fillRect(-5,-74,3,3);X.fillRect(3,-74,3,3);
+
+  // Determined mouth
+  X.strokeStyle='#aa5533';X.lineWidth=1.5;
+  X.beginPath();X.moveTo(-3,-67);X.lineTo(3,-67);X.stroke();
+
+  // Arms
+  X.strokeStyle='#ffddaa';X.lineWidth=5;
+  const armOut=kevin.diving?50:20;
+  const armUp=kevin.grounded?-50:-55;
+  // Left arm
+  X.beginPath();X.moveTo(-15,-55);X.lineTo(-15-armOut,armUp);X.stroke();
+  // Right arm
+  X.beginPath();X.moveTo(15,-55);X.lineTo(15+armOut,armUp);X.stroke();
+
+  // Gloves
+  X.fillStyle='#44cc44';
+  X.beginPath();X.arc(-15-armOut,armUp,7,0,Math.PI*2);X.fill();
+  X.beginPath();X.arc(15+armOut,armUp,7,0,Math.PI*2);X.fill();
+
+  X.shadowBlur=0;
+  X.restore();
+}
+
+function drawShooter(){
+  if(!shooter.visible)return;
+  X.save();
+  X.translate(shooter.x,shooter.y);
+  X.globalAlpha=0.5;
+  X.font='30px serif';X.textAlign='center';X.textBaseline='middle';
+  X.fillText('🏃',0,-15);
+  X.globalAlpha=1;
+  X.restore();
+}
+
+function drawBall(){
+  // Trail
+  ball.trail.forEach((t,i)=>{
+    t.life-=0.06;if(t.life<=0)return;
+    X.globalAlpha=t.life*0.3;
+    X.beginPath();X.arc(t.x,t.y,5*t.s,0,Math.PI*2);
+    X.fillStyle='#ffffff';X.fill();
+  });
+  X.globalAlpha=1;
+  ball.trail=ball.trail.filter(t=>t.life>0);
+
+  if(!ball.active)return;
+
+  const bs=ball.scale;
+  X.save();X.translate(ball.x,ball.y);X.scale(bs,bs);
+
+  // Shadow
+  X.globalAlpha=0.15;
+  X.beginPath();X.ellipse(0,12/bs,10,3,0,0,Math.PI*2);X.fillStyle='#000';X.fill();
+  X.globalAlpha=1;
+
+  // Ball
+  X.shadowColor='#ffdd00';X.shadowBlur=8+bs*6;
+  const bg=X.createRadialGradient(-2,-2,0,0,0,12);
+  bg.addColorStop(0,'#fff');bg.addColorStop(0.5,'#eee');bg.addColorStop(1,'#bbb');
+  X.beginPath();X.arc(0,0,12,0,Math.PI*2);X.fillStyle=bg;X.fill();
+  X.shadowBlur=0;
+
+  // Pentagon pattern
+  X.fillStyle='#333';
+  for(let i=0;i<5;i++){
+    const a=Math.PI*2*i/5+frame*0.08;
+    X.beginPath();X.arc(Math.cos(a)*5,Math.sin(a)*5,2.5,0,Math.PI*2);X.fill();
+  }
+
+  X.restore();
+}
+
+function drawParticles(){
+  particles.forEach(p=>{
+    X.globalAlpha=Math.max(0,p.life);
+    X.beginPath();X.arc(p.x,p.y,Math.max(0.5,p.size*p.life),0,Math.PI*2);
+    X.fillStyle=p.color;X.fill();
+  });
+  X.globalAlpha=1;
+}
+
+function drawAnnouncements(){
+  announcements.forEach(a=>{
+    X.save();X.globalAlpha=Math.min(1,a.alpha);
+    X.font=`bold ${Math.round(30*a.scale)}px 'Bungee',sans-serif`;
+    X.textAlign='center';X.textBaseline='middle';
+    X.strokeStyle='#000';X.lineWidth=4;X.strokeText(a.text,W/2,a.y);
+    X.fillStyle=a.color;X.shadowColor=a.color;X.shadowBlur=15;
+    X.fillText(a.text,W/2,a.y);X.restore();
+  });
+}
+
+function drawShotIndicator(){
+  if(!running)return;
+  // Pips at bottom
+  const pipY=H-10;
+  const totalW=totalShots*16;
+  const sx=W/2-totalW/2;
+  for(let i=0;i<totalShots;i++){
+    const px=sx+i*16+8;
+    if(i<shotNum){
+      // Determine if this was a save or goal
+      // We track by counting
+      X.fillStyle=i<saves+(totalShots-shotNum)?'#aaa':'#aaa'; // simplified
+    }
+    X.fillStyle=i<shotNum?'#666':'#333';
+    X.beginPath();X.arc(px,pipY,4,0,Math.PI*2);X.fill();
+  }
+}
+
+// ======== LOOP ========
+function loop(){update();draw();requestAnimationFrame(loop);}
+
+// ======== CONTROLS ========
+document.addEventListener('keydown',e=>{
+  keys_[e.key.toLowerCase()]=true;
+  if(e.key===' '||e.key==='ArrowUp')e.preventDefault();
+  // Dive with Q/E
+  if((e.key==='q'||e.key==='Q')&&!kevin.diving&&running){
+    kevin.diving=true;kevin.diveDir=-1;kevin.diveTimer=0;
+    if(kevin.grounded){kevin.vy=-8;kevin.grounded=false;}
+  }
+  if((e.key==='e'||e.key==='E')&&!kevin.diving&&running){
+    kevin.diving=true;kevin.diveDir=1;kevin.diveTimer=0;
+    if(kevin.grounded){kevin.vy=-8;kevin.grounded=false;}
+  }
+});
+document.addEventListener('keyup',e=>keys_[e.key.toLowerCase()]=false);
+
+C.addEventListener('mousemove',e=>{
+  const r=C.getBoundingClientRect();
+  mouseX=(e.clientX-r.left)/r.width*W;
+});
+C.addEventListener('mousedown',e=>{
+  if(!running)return;
+  const r=C.getBoundingClientRect();
+  const cx=(e.clientX-r.left)/r.width*W;
+  // Click left/right of Kevin to dive
+  if(!kevin.diving){
+    if(cx<kevin.x-30){kevin.diving=true;kevin.diveDir=-1;kevin.diveTimer=0;if(kevin.grounded){kevin.vy=-8;kevin.grounded=false;}}
+    else if(cx>kevin.x+30){kevin.diving=true;kevin.diveDir=1;kevin.diveTimer=0;if(kevin.grounded){kevin.vy=-8;kevin.grounded=false;}}
+    else if(kevin.grounded){kevin.vy=kevin.jumpPower;kevin.grounded=false;}
+  }
+});
+
+C.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  if(!running)return;
+  const r=C.getBoundingClientRect();
+  const cx=(e.touches[0].clientX-r.left)/r.width*W;
+  mouseX=cx;
+  if(!kevin.diving){
+    if(cx<kevin.x-40){kevin.diving=true;kevin.diveDir=-1;kevin.diveTimer=0;if(kevin.grounded){kevin.vy=-8;kevin.grounded=false;}}
+    else if(cx>kevin.x+40){kevin.diving=true;kevin.diveDir=1;kevin.diveTimer=0;if(kevin.grounded){kevin.vy=-8;kevin.grounded=false;}}
+    else if(kevin.grounded){kevin.vy=kevin.jumpPower;kevin.grounded=false;}
+  }
+});
+C.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const r=C.getBoundingClientRect();
+  mouseX=(e.touches[0].clientX-r.left)/r.width*W;
+});
+
+startBtn.addEventListener('click',()=>{
+  initMatch();running=true;phase='race';
+  overlay.classList.add('hidden');resultMsg.style.display='none';
+  commentary("Kevin takes his position in goal!");
+});
+
+initMatch();loop();
+</script>
+</body>
+</html>

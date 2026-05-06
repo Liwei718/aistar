@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>科学人物馆 · 星火 AI 科学馆</title>
+    <link rel="stylesheet" href="./styles.css?v=20260505a" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html#home" aria-label="星火 AI 科学馆首页">
+        <span class="brand-star">✦</span>
+        <span>星火 AI 科学馆</span>
+      </a>
+      <nav class="main-nav" aria-label="主导航">
+        <a href="./index.html#home">首页</a>
+        <a href="./ai-learning.html">AI 学习</a>
+        <a href="./hermes.html">Hermes 对话</a>
+        <a href="./frontier.html">今日前沿</a>
+        <a href="./projects.html">开源项目</a>
+        <a href="./knowledge.html">中小学知识</a>
+        <a href="./games.html">奥林匹克小游戏</a>
+        <a class="active" href="./scientists.html">科学人物</a>
+        <a href="./index.html#map">我的学习地图</a>
+        <a href="./contact.html">联系我</a>
+      </nav>
+      <div class="header-actions">
+        <a class="home-button" href="./index.html#home">返回首页</a>
+      </div>
+    </header>
+
+    <main class="page-shell scientists-page">
+      <section class="scientists-hub" aria-labelledby="scientists-title">
+        <div class="scientists-header">
+          <div>
+            <p>物理 · 数学 · AI</p>
+            <h1 id="scientists-title">科学人物馆</h1>
+            <span>用中小学生能理解的方式讲解物理学家、数学家和 AI 学家的故事：他们解决了什么问题、用了什么方法、和课内知识有什么关系。</span>
+          </div>
+          <a href="./knowledge.html">关联知识库 →</a>
+        </div>
+
+        <div class="scientist-controls" aria-label="科学人物分类">
+          <button class="active" type="button" data-scientist-filter="all">全部</button>
+          <button type="button" data-scientist-filter="physics">物理学家</button>
+          <button type="button" data-scientist-filter="math">数学家</button>
+          <button type="button" data-scientist-filter="ai">AI 学家</button>
+        </div>
+
+        <section class="scientist-grid" aria-label="科学人物列表">
+          <a class="scientist-card lead" href="./scientist-detail.html?id=newton" data-scientist-category="physics">
+            <div class="scientist-card-head">
+              <div class="scientist-avatar avatar-newton">
+                <b aria-hidden="true">牛</b>
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Portrait_of_Sir_Isaac_Newton%2C_1689.jpg?width=240" alt="牛顿头像" loading="lazy" onerror="this.hidden=true" />
+              </div>
+              <span>物理学家</span>
+            </div>
+            <h2>牛顿：用数学语言解释自然运动</h2>
+            <p>牛顿把地面上的运动和天体运行放进同一套规律里，用运动定律和万有引力解释苹果下落、月球绕地球运动等现象。他让物理学真正拥有了强大的数学表达方式。</p>
+            <dl>
+              <div><dt>核心贡献</dt><dd>经典力学、万有引力、微积分发展</dd></div>
+              <div><dt>关联知识</dt><dd>力与运动、引力、函数图像</dd></div>
+            </dl>
+          </a>
+
+          <a class="scientist-card" href="./scientist-detail.html?id=einstein" data-scientist-category="physics">
+            <div class="scientist-card-head">
+              <div class="scientist-avatar avatar-einstein">
+                <b aria-hidden="true">爱</b>
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Einstein_1921_portrait2.jpg?width=240" alt="爱因斯坦头像" loading="lazy" onerror="this.hidden=true" />
+              </div>
+              <span>物理学家</span>
+            </div>
+            <h2>爱因斯坦</h2>
+            <p>提出相对论，改变了人类理解时间、空间、光和引力的方式。</p>
+            <small>关联知识：光、速度、宇宙观测</small>
+          </a>
+          <a class="scientist-card" href="./scientist-detail.html?id=curie" data-scientist-category="physics">
+            <div class="scientist-card-head">
+              <div class="scientist-avatar avatar-curie">
+                <b aria-hidden="true">居</b>
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Portrait_of_Marie_Curie.jpg?width=240" alt="玛丽·居里头像" loading="lazy" onerror="this.hidden=true" />
+              </div>
+              <span>物理学家</span>
+            </div>
+            <h2>玛丽·居里</h2>
+            <p>通过长期实验研究放射性，让人们知道原子内部还藏着巨大的能量。</p>
+            <small>关联知识：物质结构、能量、实验测量</small>
+          </a>
+          <a class="scientist-card" href="./scientist-detail.html?id=euclid" data-scientist-category="math">
+            <div class="scientist-card-head">
+              <div class="scientist-avatar avatar-euclid">
+                <b aria-hidden="true">欧</b>
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Portrait_of_Euclid_Wellcome_L0019815.jpg?width=240" alt="欧几里得头像" loading="lazy" onerror="this.hidden=true" />
+              </div>
+              <span>数学家</span>
+            </div>
+            <h2>欧几里得</h2>
+            <p>把几何知识整理成清晰的公理体系，影响了两千多年的数学学习。</p>
+            <small>关联知识：图形、证明、逻辑推理</small>
+          </a>
+          <a class="scientist-card" href="./scientist-detail.html?id=gauss" data-scientist-category="math">
+            <div class="scientist-card-head">
+              <div class="scientist-avatar avatar-gauss">
+                <b aria-hidden="true">高</b>
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Carl_Friedrich_Gauss.jpg?width=240" alt="高斯头像" loading="lazy" onerror="this.hidden=true" />
+              </div>
+              <span>数学家</span>
+            </div>
+            <h2>高斯</h2>
+            <p>在数论、统计、几何和天文学中都有重要贡献，被称为“数学王子”。</p>
+            <small>关联知识：数列、统计、函数思想</small>
+          </a>
+          <a class="scientist-card" href="./scientist-detail.html?id=hua-luogeng" data-scientist-category="math">
+            <div class="scientist-card-head">
+              <div class="scientist-avatar avatar-hua">
+                <b aria-hidden="true">华</b>
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Hua_Luogeng_1956.jpg?width=240" alt="华罗庚头像" loading="lazy" onerror="this.hidden=true" />
+              </div>
+              <span>数学家</span>
+            </div>
+            <h2>华罗庚</h2>
+            <p>中国重要数学家，推动数学研究和数学应用走进生产生活。</p>
+            <small>关联知识：数论、优化、数学建模</small>
+          </a>
+          <a class="scientist-card" href="./scientist-detail.html?id=turing" data-scientist-category="ai">
+            <div class="scientist-card-head">
+              <div class="scientist-avatar avatar-turing">
+                <b aria-hidden="true">图</b>
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Alan_Turing_Aged_16.jpg?width=240" alt="艾伦·图灵头像" loading="lazy" onerror="this.hidden=true" />
+              </div>
+              <span>AI 学家</span>
+            </div>
+            <h2>艾伦·图灵</h2>
+            <p>提出计算模型和“机器能否思考”的问题，是计算机科学和 AI 的奠基者之一。</p>
+            <small>关联知识：算法、计算、逻辑判断</small>
+          </a>
+          <a class="scientist-card" href="./scientist-detail.html?id=mccarthy" data-scientist-category="ai">
+            <div class="scientist-card-head">
+              <div class="scientist-avatar avatar-mccarthy">
+                <b aria-hidden="true">麦</b>
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/John_McCarthy_Stanford.jpg?width=240" alt="约翰·麦卡锡头像" loading="lazy" onerror="this.hidden=true" />
+              </div>
+              <span>AI 学家</span>
+            </div>
+            <h2>约翰·麦卡锡</h2>
+            <p>提出“人工智能”这个名称，推动 AI 成为一个独立研究方向。</p>
+            <small>关联知识：符号推理、编程语言、问题求解</small>
+          </a>
+          <a class="scientist-card" href="./scientist-detail.html?id=hinton" data-scientist-category="ai">
+            <div class="scientist-card-head">
+              <div class="scientist-avatar avatar-hinton">
+                <b aria-hidden="true">辛</b>
+                <img src="https://commons.wikimedia.org/wiki/Special:FilePath/Geoffrey_Hinton_at_UBC_%28cropped%29.jpg?width=240" alt="杰弗里·辛顿头像" loading="lazy" onerror="this.hidden=true" />
+              </div>
+              <span>AI 学家</span>
+            </div>
+            <h2>杰弗里·辛顿</h2>
+            <p>推动神经网络和深度学习发展，让 AI 在图像、语音和语言任务中变得更强。</p>
+            <small>关联知识：神经网络、数据训练、模式识别</small>
+          </a>
+        </section>
+        <p class="scientist-photo-credit">
+          人物照片来源：Wikimedia Commons；欧几里得图像来自 Wellcome Library（CC BY 4.0），约翰·麦卡锡图像作者 null0（CC BY-SA 2.0），杰弗里·辛顿图像作者 Eviatar Bach（CC BY-SA 3.0），其余图片以原始文件页授权为准。
+        </p>
+      </section>
+    </main>
+
+    <script src="./scientists.js?v=20260503g"></script>
+  </body>
+</html>

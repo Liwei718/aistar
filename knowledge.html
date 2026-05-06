@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>中小学知识库 · 星火 AI 科学馆</title>
+    <link rel="stylesheet" href="./styles.css?v=20260505a" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html#home" aria-label="星火 AI 科学馆首页">
+        <span class="brand-star">✦</span>
+        <span>星火 AI 科学馆</span>
+      </a>
+      <nav class="main-nav" aria-label="主导航">
+        <a href="./index.html#home">首页</a>
+        <a href="./ai-learning.html">AI 学习</a>
+        <a href="./hermes.html">Hermes 对话</a>
+        <a href="./frontier.html">今日前沿</a>
+        <a href="./projects.html">开源项目</a>
+        <a class="active" href="./knowledge.html">中小学知识</a>
+        <a href="./games.html">奥林匹克小游戏</a>
+        <a href="./scientists.html">科学人物</a>
+        <a href="./index.html#map">我的学习地图</a>
+        <a href="./contact.html">联系我</a>
+      </nav>
+      <div class="header-actions">
+        <a class="home-button" href="./index.html#home">返回首页</a>
+      </div>
+    </header>
+
+    <main class="page-shell knowledge-page">
+      <section class="knowledge-hub" aria-labelledby="knowledge-title">
+        <div class="knowledge-header">
+          <div>
+            <p>深圳小六与初一衔接</p>
+            <h1 id="knowledge-title">中小学知识库</h1>
+            <span>围绕深圳小学六年级和初中一年级，按重点知识板块整理数学、科学等内容。数学以北师大版为主，科学以人教社体系为主，后续可按学校实际教材细化版本。</span>
+          </div>
+          <a href="#knowledge-map">查看知识地图 →</a>
+        </div>
+
+        <div class="knowledge-stage-bar" aria-label="知识学习阶段">
+          <button class="active" type="button">六年级</button>
+          <button type="button">小升初衔接</button>
+          <button type="button">初一上册</button>
+          <button type="button">知识地图</button>
+        </div>
+
+        <section class="knowledge-daily knowledge-daily-single" aria-label="今日知识补充">
+          <article class="knowledge-daily-card video">
+            <div class="daily-head">
+              <span>今日视频</span>
+              <a href="./frontier.html">查看今日前沿 →</a>
+            </div>
+            <h2>一段视频，带你看懂一个知识点</h2>
+            <p>每个重点知识板块都配 1-3 分钟讲解视频，帮助学生先建立直观理解，再进入图解和例题。</p>
+            <ul>
+              <li>六年级数学：圆与百分数</li>
+              <li>初一数学：有理数与方程</li>
+              <li>科学：实验观察与生命系统</li>
+            </ul>
+          </article>
+        </section>
+
+        <div class="knowledge-controls" aria-label="知识筛选">
+          <button class="active" type="button" data-knowledge-filter="all">全部</button>
+          <button type="button" data-knowledge-filter="age-10-12">10-12 岁</button>
+          <button type="button" data-knowledge-filter="age-bridge">小升初衔接</button>
+          <button type="button" data-knowledge-filter="age-12-13">12-13 岁</button>
+          <button type="button" data-knowledge-filter="g6">小学六年级</button>
+          <button type="button" data-knowledge-filter="g7">初中一年级</button>
+          <button type="button" data-knowledge-filter="math">数学</button>
+          <button type="button" data-knowledge-filter="science">科学</button>
+        </div>
+
+        <section class="knowledge-map" id="knowledge-map" aria-label="重点知识板块">
+          <article class="knowledge-block lead" data-age="age-10-12 age-bridge" data-grade="g6" data-subject="math">
+            <span>小六数学 · 北师大版</span>
+            <h2>圆、百分数、比和数据处理</h2>
+            <p>六年级数学重点把“图形、数量关系、统计表达”连起来，为初一的有理数、代数和几何观察打基础。</p>
+            <ul>
+              <li>圆：圆心、半径、直径、周长、面积</li>
+              <li>百分数：意义、应用题、折扣和增长率</li>
+              <li>比：比的意义、化简比、按比例分配</li>
+              <li>数据处理：统计图、平均数、数据解释</li>
+            </ul>
+          </article>
+
+          <article class="knowledge-block" data-age="age-10-12 age-bridge" data-grade="g6" data-subject="math">
+            <span>小六数学</span>
+            <h2>分数混合运算</h2>
+            <p>掌握分数加减乘除、运算顺序和实际问题建模，是初中代数表达的前置能力。</p>
+          </article>
+          <article class="knowledge-block" data-age="age-10-12 age-bridge" data-grade="g6" data-subject="math">
+            <span>小六数学</span>
+            <h2>观察物体与空间想象</h2>
+            <p>从不同方向观察立体图形，训练视图转换，为初中几何图形学习做准备。</p>
+          </article>
+          <article class="knowledge-block" data-age="age-10-12 age-bridge" data-grade="g6" data-subject="science">
+            <span>小六科学 · 人教社体系</span>
+            <h2>科学探究：先观察，再解释</h2>
+            <p>学习提出问题、记录现象、比较实验结果，建立科学观察的第一套方法。</p>
+          </article>
+          <article class="knowledge-block" data-age="age-10-12 age-bridge" data-grade="g6" data-subject="science">
+            <span>小六科学</span>
+            <h2>物质变化与能量</h2>
+            <p>观察物质形态、燃烧、热传递、电和磁等现象，用实验记录证据并解释变化。</p>
+          </article>
+          <article class="knowledge-block" data-age="age-10-12 age-bridge" data-grade="g6" data-subject="science">
+            <span>小六科学</span>
+            <h2>生命、地球与宇宙</h2>
+            <p>整理生物适应环境、生态关系、地球运动和天体现象，连接科学观察与模型解释。</p>
+          </article>
+          <article class="knowledge-block" data-age="age-10-12 age-bridge" data-grade="g6" data-subject="science">
+            <span>小六科学</span>
+            <h2>今天的视频：看见科学实验</h2>
+            <p>通过短视频观察实验现象，再到课堂知识点里拆解“为什么会这样”。</p>
+          </article>
+
+          <article class="knowledge-block lead" data-age="age-bridge age-12-13" data-grade="g7" data-subject="math">
+            <span>初一数学 · 北师大版</span>
+            <h2>有理数、整式与一元一次方程</h2>
+            <p>初一数学从具体数字走向符号表达，重点是理解负数、代数式和方程思想。</p>
+            <ul>
+              <li>有理数：数轴、相反数、绝对值、四则运算</li>
+              <li>整式：字母表示数、合并同类项、去括号</li>
+              <li>一元一次方程：等式性质、解方程、实际问题</li>
+              <li>数据整理：统计图表、样本、数据分析</li>
+            </ul>
+          </article>
+
+          <article class="knowledge-block" data-age="age-bridge age-12-13" data-grade="g7" data-subject="math">
+            <span>初一数学</span>
+            <h2>丰富的图形世界</h2>
+            <p>认识立体图形、展开图、截面和视图，让小学空间想象过渡到初中几何。</p>
+          </article>
+          <article class="knowledge-block" data-age="age-bridge age-12-13" data-grade="g7" data-subject="math">
+            <span>初一数学</span>
+            <h2>数据收集与整理</h2>
+            <p>学习统计图表、样本抽取和数据解释，把生活中的现象变成能比较的数字。</p>
+          </article>
+          <article class="knowledge-block" data-age="age-bridge age-12-13" data-grade="g7" data-subject="science">
+            <span>初一科学 · 人教社体系</span>
+            <h2>科学探究与实验方法</h2>
+            <p>学习提出问题、作出假设、设计实验、控制变量、记录数据和得出结论。</p>
+          </article>
+          <article class="knowledge-block" data-age="age-bridge age-12-13" data-grade="g7" data-subject="science">
+            <span>初一科学</span>
+            <h2>生命系统与显微观察</h2>
+            <p>从细胞、组织、器官到生物体，理解生命结构层次，并学习显微镜观察方法。</p>
+          </article>
+          <article class="knowledge-block" data-age="age-bridge age-12-13" data-grade="g7" data-subject="science">
+            <span>初一科学</span>
+            <h2>地球、物质与能量基础</h2>
+            <p>衔接地理、物理和化学入门概念，理解物质性质、能量转化和地球系统。</p>
+          </article>
+          <article class="knowledge-block" data-age="age-bridge age-12-13" data-grade="g7" data-subject="science">
+            <span>初一科学</span>
+            <h2>显微观察与生命系统</h2>
+            <p>从细胞到生命体，理解结构层次和显微观察方法，建立生命科学的基本视角。</p>
+          </article>
+          <article class="knowledge-block" data-age="age-bridge age-12-13" data-grade="g7" data-subject="science">
+            <span>初一科学</span>
+            <h2>今天的知识视频：实验方法</h2>
+            <p>用短视频演示变量控制、数据记录和结论表达，帮助学生把方法真正看懂。</p>
+          </article>
+        </section>
+      </section>
+    </main>
+
+    <script src="./knowledge.js?v=20260503b"></script>
+  </body>
+</html>

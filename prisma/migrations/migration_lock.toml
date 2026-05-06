@@ -1,0 +1,4 @@
+# Please do not edit manually
+# It should be added to your version control system.
+
+provider = "postgresql"
