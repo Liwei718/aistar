@@ -501,6 +501,53 @@ function projectItemFromRanking(item: {
   };
 }
 
+function categoryLabelForScientist(category: string) {
+  const labels: Record<string, string> = {
+    physics: "物理学家",
+    math: "数学家",
+    ai: "AI 学家"
+  };
+  return labels[category] || "科学人物";
+}
+
+function scientistFromContent(item: {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string | null;
+  body: string;
+  cover_image_url: string | null;
+  subject: string | null;
+  metadata: unknown;
+}) {
+  const metadata = metadataOf(item.metadata);
+  const category = typeof metadata.category === "string" ? metadata.category : item.subject || "physics";
+  const contributions = arrayOfStrings(metadata.contributions);
+  const knowledge = arrayOfStrings(metadata.knowledge);
+
+  return {
+    id: item.id,
+    slug: item.slug,
+    name: typeof metadata.name === "string" ? metadata.name : item.title,
+    title: item.title,
+    category,
+    category_label: categoryLabelForScientist(category),
+    summary: item.summary,
+    story: item.body,
+    contribution_summary: typeof metadata.contribution_summary === "string" ? metadata.contribution_summary : contributions.join("、"),
+    contributions,
+    explanation: typeof metadata.explanation === "string" ? metadata.explanation : item.summary,
+    knowledge,
+    question: typeof metadata.question === "string" ? metadata.question : "这个人物的贡献和你正在学习的知识有什么关系？",
+    inspiration: typeof metadata.inspiration === "string" ? metadata.inspiration : "用一个好问题开始探索，再用证据和方法慢慢接近答案。",
+    avatar_text: typeof metadata.avatar_text === "string" ? metadata.avatar_text : item.title.slice(0, 1),
+    photo_url: item.cover_image_url,
+    rank: typeof metadata.rank === "number" ? metadata.rank : 999,
+    photo_credit: typeof metadata.photo_credit === "string" ? metadata.photo_credit : "Wikimedia Commons",
+    href: `./scientist-detail.html?id=${item.slug}`
+  };
+}
+
 function aiBookSummary(book: {
   id: string;
   title: string;
@@ -990,6 +1037,8 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/projects/rankings/current", description: "当前开源项目周榜" },
       { method: "GET", path: "/api/projects/rankings", description: "开源项目历史榜单" },
       { method: "GET", path: "/api/projects/:id", description: "开源项目详情" },
+      { method: "GET", path: "/api/scientists", description: "科学人物列表" },
+      { method: "GET", path: "/api/scientists/:id", description: "科学人物详情" },
       { method: "GET", path: "/api/ai/books", description: "AI 学习书籍列表" },
       { method: "GET", path: "/api/ai/books/:slug", description: "AI 学习书籍详情、章节和任务" },
       { method: "GET", path: "/api/ai/books/:slug/progress", description: "当前用户 AI 书籍阅读进度" },
@@ -1576,6 +1625,72 @@ app.get("/api/projects/:id", async (req, res, next) => {
   } catch (error) {
     if (isDatabaseConnectionError(error)) {
       res.status(503).json({ error: "database_unavailable", message: "读取项目详情需要数据库连接。" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/scientists", async (req, res, next) => {
+  try {
+    const query = listQuerySchema
+      .extend({
+        category: z.string().optional()
+      })
+      .parse(req.query);
+
+    const contents = await prisma.content.findMany({
+      where: {
+        status: "published",
+        deleted_at: null,
+        content_type: "scientist"
+      },
+      orderBy: [{ created_at: "asc" }],
+      take: query.limit,
+      skip: query.offset
+    });
+
+    const data = contents
+      .map(scientistFromContent)
+      .filter((item) => !query.category || query.category === "all" || item.category === query.category)
+      .sort((a, b) => a.rank - b.rank);
+
+    res.json(jsonSafe({ data, mode: data.length ? "live" : "demo" }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.json({ data: [], mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/scientists/:id", async (req, res, next) => {
+  try {
+    const params = z.object({ id: z.string() }).parse(req.params);
+    const content = await prisma.content.findFirst({
+      where: {
+        OR: [
+          z.string().uuid().safeParse(params.id).success ? { id: params.id } : undefined,
+          { slug: params.id }
+        ].filter(Boolean) as Array<{ id?: string; slug?: string }>,
+        status: "published",
+        deleted_at: null,
+        content_type: "scientist"
+      }
+    });
+
+    if (!content) {
+      res.status(404).json({ error: "not_found", message: "未找到这位科学人物" });
+      return;
+    }
+
+    res.json(jsonSafe({ data: scientistFromContent(content), mode: "live" }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "读取科学人物详情需要数据库连接。" });
       return;
     }
 

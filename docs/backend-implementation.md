@@ -17,6 +17,7 @@
 - AI 学习动态化第一版：AI 学习页已从后端读取书籍、章节、阅读任务，并支持登录用户保存阅读进度。
 - 奥林匹克小游戏成绩记录第一版：小游戏完成后可写入成绩，触发学习天数、知识点完成和徽章。
 - 中小学知识库动态化第一版：知识点列表、详情、视频、任务和学习进度已接入后端。
+- 科学人物动态化第一版：科学人物列表和详情已从后端 `contents` 表读取。
 
 ## 本地启动
 
@@ -83,6 +84,8 @@ http://localhost:3001
 | GET | `/api/projects/rankings/current` | 当前开源项目周榜 |
 | GET | `/api/projects/rankings` | 开源项目历史榜单，支持 `category` 和分页 |
 | GET | `/api/projects/:id` | 开源项目详情，支持项目 ID 或 slug |
+| GET | `/api/scientists` | 科学人物列表，支持 `category` 分类 |
+| GET | `/api/scientists/:id` | 科学人物详情，支持人物 ID 或 slug |
 | GET | `/api/ai/books` | AI 学习书籍列表，支持年级过滤和分页 |
 | GET | `/api/ai/books/:slug` | AI 学习书籍详情，包含章节导读和阅读任务 |
 | GET | `/api/ai/books/:slug/progress` | 当前登录用户的书籍阅读进度 |
@@ -99,7 +102,7 @@ http://localhost:3001
 - 新增 `user_sessions` 表，登录 token 以哈希形式持久化保存，退出时标记撤销。
 - 新增 `contact_messages` 表，联系我页面留言可写入数据库。
 - 新增 `/api/home/summary`，首页从单纯拼接多个列表，升级为可控运营摘要接口。
-- 前端统一静态资源版本号为 `20260506f`，减少缓存造成的旧页面问题。
+- 前端统一静态资源版本号为 `20260507a`，减少缓存造成的旧页面问题。
 
 ## 本阶段 P1 优化
 
@@ -142,6 +145,14 @@ AI 学习动态化：
 - `knowledge_points.metadata` 增加视频、教材版本、年龄段和任务配置。
 - 登录用户完成知识点后写入 `learning_progress`，并可触发“知识点掌握者”徽章。
 - `prisma/seed.js` 新增小六数学、小六科学、初一数学、初一科学示例知识点。
+
+科学人物动态化：
+
+- 新增 `/api/scientists` 和 `/api/scientists/:id`。
+- 科学人物复用 `contents` 表，`content_type=scientist`，人物分类、排序、贡献、关联知识、照片和讲解字段放在 `metadata`。
+- `scientists.html` 页面加载后由 `scientists.js` 从后端渲染人物列表，并保留静态兜底。
+- `scientist-detail.html` 页面加载后由 `scientist-detail.js` 从后端渲染人物故事、贡献、讲解、关联知识、思考题和学习启发。
+- `prisma/seed.js` 新增牛顿、爱因斯坦、玛丽·居里、欧几里得、高斯、华罗庚、图灵、麦卡锡、辛顿 9 位人物示例。
 
 本地数据库说明：
 
