@@ -6,7 +6,7 @@ import { createHash, randomUUID, timingSafeEqual } from "node:crypto";
 import { promisify } from "node:util";
 import helmet from "helmet";
 import { z } from "zod";
-import { prisma, sessionStore } from "./db.js";
+import { prisma } from "./db.js";
 
 const execFileAsync = promisify(execFile);
 const app = express();
@@ -95,6 +95,58 @@ const demoGame = {
   knowledge_points: [{ knowledge_point: demoKnowledgePoint }]
 };
 
+const demoFrontierItems = [
+  {
+    id: "demo-frontier-ai",
+    category: "ai",
+    title: "多模态模型正在学习同时理解文字、图片和声音",
+    summary: "AI 不只是读文字，还能把图片、声音和文字放在一起判断。它像一个会看图、听课、做笔记的学习助手，但仍需要我们验证来源。",
+    related_knowledge: "信息与信息处理",
+    href: "./frontier.html"
+  },
+  {
+    id: "demo-frontier-robot",
+    category: "robotics",
+    title: "仿生机器人用鱼类动作提升水下稳定性",
+    summary: "研究者模仿鱼尾摆动，让机器人在复杂水流中更灵活地转向，和科学课里的力与运动有关。",
+    related_knowledge: "力与运动",
+    href: "./frontier.html"
+  },
+  {
+    id: "demo-frontier-space",
+    category: "space",
+    title: "新观测数据帮助理解早期星系形成",
+    summary: "望远镜看到的古老光线，能帮助我们理解宇宙早期发生了什么，也让光年和宇宙年龄变得更具体。",
+    related_knowledge: "宇宙与天体",
+    href: "./frontier.html"
+  }
+];
+
+const demoHomeSummary = {
+  hero_book: {
+    title: "解锁 AI 魔法",
+    subtitle: "和爸爸一起走进智能未来",
+    href: "./ai-learning.html"
+  },
+  featured_game: demoGame,
+  frontier_summary: demoFrontierItems,
+  project_summary: [
+    {
+      id: "demo-project-ai",
+      title: "本周开源项目",
+      summary: "精选适合学生试玩、Fork 和改造的真实工程。",
+      href: "./projects.html"
+    }
+  ],
+  recommendation_cards: [demoContent, demoGame, demoKnowledgePoint],
+  learning_summary: {
+    learning_days: 0,
+    streak_days: 0,
+    mastered_knowledge_points: 0,
+    badges: []
+  }
+};
+
 function isDatabaseConnectionError(error: unknown) {
   return error instanceof Error && /Can't reach database server|ECONNREFUSED|P1001|connect/i.test(error.message);
 }
@@ -111,8 +163,42 @@ function hashPassword(password: string) {
   return createHash("sha256").update(password).digest("hex");
 }
 
+function hashToken(token: string) {
+  return createHash("sha256").update(token).digest("hex");
+}
+
 function createToken() {
   return randomUUID();
+}
+
+function sessionExpiresAt() {
+  const days = Number(process.env.SESSION_TTL_DAYS ?? 30);
+  return new Date(Date.now() + days * 24 * 60 * 60 * 1000);
+}
+
+function clientIp(req: express.Request) {
+  return req.ip?.replace(/^::ffff:/, "") || undefined;
+}
+
+function normalizeHomeRecommendation(item: Record<string, unknown>, href: string) {
+  return {
+    ...item,
+    href
+  };
+}
+
+function contentHref(contentType: string) {
+  const hrefs: Record<string, string> = {
+    frontier_news: "./frontier.html",
+    open_source_intro: "./projects.html",
+    knowledge_article: "./knowledge.html",
+    ai_problem: "./ai-learning.html",
+    scientist: "./scientists.html",
+    game_intro: "./games.html",
+    learning_path_node: "./knowledge.html"
+  };
+
+  return hrefs[contentType] ?? "./index.html#recommend";
 }
 
 function normalizeHermesBaseUrl() {
@@ -232,10 +318,48 @@ async function findCurrentUser(req: express.Request) {
   const token = getTokenFromHeader(req);
   if (!token) return null;
 
-  const session = sessionStore.get(token);
-  if (!session) return null;
+  const session = await prisma.userSession.findUnique({
+    where: { token_hash: hashToken(token) },
+    include: { user: true }
+  });
 
-  return prisma.user.findUnique({ where: { id: session.userId } });
+  if (!session || session.revoked_at || session.expires_at <= new Date()) return null;
+
+  await prisma.userSession.update({
+    where: { token_hash: session.token_hash },
+    data: { last_seen_at: new Date() }
+  });
+
+  return session.user;
+}
+
+async function issueSession(req: express.Request, userId: string) {
+  const token = createToken();
+
+  await prisma.userSession.create({
+    data: {
+      token_hash: hashToken(token),
+      user_id: userId,
+      user_agent: req.header("user-agent"),
+      ip: clientIp(req),
+      expires_at: sessionExpiresAt()
+    }
+  });
+
+  return token;
+}
+
+async function revokeSession(req: express.Request) {
+  const token = getTokenFromHeader(req);
+  if (!token) return;
+
+  await prisma.userSession.updateMany({
+    where: {
+      token_hash: hashToken(token),
+      revoked_at: null
+    },
+    data: { revoked_at: new Date() }
+  });
 }
 
 app.get("/health", (_req, res) => {
@@ -313,6 +437,8 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/contents", description: "已发布内容列表" },
       { method: "GET", path: "/api/knowledge-points", description: "已发布知识点列表" },
       { method: "GET", path: "/api/games", description: "已发布小游戏列表" },
+      { method: "GET", path: "/api/home/summary", description: "首页运营位摘要" },
+      { method: "POST", path: "/api/contact-messages", description: "提交联系留言" },
       { method: "POST", path: "/api/game-records", description: "写入用户游戏记录" },
       { method: "GET", path: "/api/recommendations/:userId", description: "获取用户推荐结果" }
     ]
@@ -393,8 +519,7 @@ app.post("/api/auth/register", async (req, res, next) => {
       }
     });
 
-    const token = createToken();
-    sessionStore.set(token, { userId: user.id, createdAt: new Date() });
+    const token = await issueSession(req, user.id);
 
     res.status(201).json({
       data: jsonSafe({
@@ -450,137 +575,7 @@ app.post("/api/auth/login", async (req, res, next) => {
       data: { last_login_at: new Date() }
     });
 
-    const token = createToken();
-    sessionStore.set(token, { userId: user.id, createdAt: new Date() });
-
-    res.json({
-      data: jsonSafe({
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          phone: user.phone,
-          nickname: user.nickname,
-          avatar_url: user.avatar_url,
-          school_stage: user.school_stage,
-          grade: user.grade
-        }
-      })
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post("/api/auth/logout", (req, res) => {
-  const header = req.header("authorization");
-  const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
-  if (token) sessionStore.delete(token);
-  res.json({ ok: true });
-});
-
-app.post("/api/auth/register", async (req, res, next) => {
-  try {
-    const body = z
-      .object({
-        nickname: z.string().min(2).max(80),
-        email: z.string().email().optional(),
-        phone: z.string().min(6).max(32).optional(),
-        password: z.string().min(6).max(64),
-        school_stage: z.enum(["primary", "middle", "high"]).optional(),
-        grade: z.number().int().min(1).max(12).optional()
-      })
-      .parse(req.body);
-
-    if (!body.email && !body.phone) {
-      res.status(400).json({ error: "validation_error", message: "邮箱或手机号至少填写一个" });
-      return;
-    }
-
-    const existingUser = await prisma.user.findFirst({
-      where: {
-        OR: [
-          body.email ? { email: body.email } : undefined,
-          body.phone ? { phone: body.phone } : undefined
-        ].filter(Boolean) as Array<{ email?: string; phone?: string }>
-      }
-    });
-
-    if (existingUser) {
-      res.status(409).json({ error: "user_exists", message: "账号已存在" });
-      return;
-    }
-
-    const user = await prisma.user.create({
-      data: {
-        email: body.email,
-        phone: body.phone,
-        password_hash: hashPassword(body.password),
-        nickname: body.nickname,
-        school_stage: body.school_stage,
-        grade: body.grade,
-        status: "active"
-      }
-    });
-
-    const token = createToken();
-    sessionStore.set(token, { userId: user.id, createdAt: new Date() });
-
-    res.status(201).json({
-      data: jsonSafe({
-        token,
-        user: {
-          id: user.id,
-          email: user.email,
-          phone: user.phone,
-          nickname: user.nickname,
-          school_stage: user.school_stage,
-          grade: user.grade
-        }
-      })
-    });
-  } catch (error) {
-    next(error);
-  }
-});
-
-app.post("/api/auth/login", async (req, res, next) => {
-  try {
-    const body = z
-      .object({
-        account: z.string().min(3).max(255),
-        password: z.string().min(6).max(64)
-      })
-      .parse(req.body);
-
-    const user = await prisma.user.findFirst({
-      where: {
-        OR: [{ email: body.account }, { phone: body.account }]
-      }
-    });
-
-    if (!user || !user.password_hash) {
-      res.status(401).json({ error: "invalid_credentials", message: "账号或密码错误" });
-      return;
-    }
-
-    const hashedInput = hashPassword(body.password);
-    const sameLength = user.password_hash.length === hashedInput.length;
-    const passwordOk =
-      sameLength && timingSafeEqual(Buffer.from(user.password_hash), Buffer.from(hashedInput));
-
-    if (!passwordOk) {
-      res.status(401).json({ error: "invalid_credentials", message: "账号或密码错误" });
-      return;
-    }
-
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { last_login_at: new Date() }
-    });
-
-    const token = createToken();
-    sessionStore.set(token, { userId: user.id, createdAt: new Date() });
+    const token = await issueSession(req, user.id);
 
     res.json({
       data: jsonSafe({
@@ -602,13 +597,144 @@ app.post("/api/auth/login", async (req, res, next) => {
 });
 
 app.post("/api/auth/logout", async (req, res) => {
-  const token = getTokenFromHeader(req);
-
-  if (token) {
-    sessionStore.delete(token);
-  }
-
+  await revokeSession(req);
   res.json({ ok: true });
+});
+
+app.get("/api/home/summary", async (req, res, next) => {
+  try {
+    const currentUser = await findCurrentUser(req);
+
+    const [frontierContents, recommendations, featuredGame, learningProgress, badges] = await Promise.all([
+      prisma.content.findMany({
+        where: {
+          status: "published",
+          deleted_at: null,
+          content_type: "frontier_news"
+        },
+        orderBy: [{ published_at: "desc" }, { created_at: "desc" }],
+        take: 3,
+        include: {
+          knowledge_points: { include: { knowledge_point: true } }
+        }
+      }),
+      prisma.content.findMany({
+        where: {
+          status: "published",
+          deleted_at: null
+        },
+        orderBy: [{ published_at: "desc" }, { created_at: "desc" }],
+        take: 4
+      }),
+      prisma.game.findFirst({
+        where: {
+          status: "published",
+          deleted_at: null,
+          slug: "table-tennis-championship"
+        },
+        include: {
+          levels: { orderBy: { level_no: "asc" } },
+          knowledge_points: { include: { knowledge_point: true } }
+        }
+      }),
+      currentUser
+        ? prisma.learningProgress.findMany({
+            where: { user_id: currentUser.id }
+          })
+        : Promise.resolve([]),
+      currentUser
+        ? prisma.userBadge.findMany({
+            where: { user_id: currentUser.id },
+            include: { badge: true }
+          })
+        : Promise.resolve([])
+    ]);
+
+    const masteredCount = learningProgress.filter((item) => item.status === "completed").length;
+    const activeDays = new Set(
+      learningProgress
+        .map((item) => item.last_activity_at || item.completed_at || item.created_at)
+        .filter(Boolean)
+        .map((date) => date.toISOString().slice(0, 10))
+    );
+
+    const frontierSummary = frontierContents.length
+      ? frontierContents.map((item) => ({
+          id: item.id,
+          category: item.metadata && typeof item.metadata === "object" && "category" in item.metadata
+            ? String((item.metadata as Record<string, unknown>).category)
+            : item.subject || "ai",
+          title: item.title,
+          summary: item.summary,
+          related_knowledge: item.knowledge_points[0]?.knowledge_point.name,
+          href: "./frontier.html"
+        }))
+      : demoFrontierItems;
+
+    res.json(jsonSafe({
+      data: {
+        ...demoHomeSummary,
+        featured_game: featuredGame ?? demoGame,
+        frontier_summary: frontierSummary,
+        recommendation_cards: recommendations.length
+          ? recommendations.map((item) => normalizeHomeRecommendation(item, contentHref(item.content_type)))
+          : demoHomeSummary.recommendation_cards,
+        learning_summary: {
+          learning_days: activeDays.size,
+          streak_days: activeDays.size ? 1 : 0,
+          mastered_knowledge_points: masteredCount,
+          badges: badges.map((item) => ({
+            name: item.badge.name,
+            slug: item.badge.slug,
+            earned_at: item.earned_at
+          }))
+        }
+      }
+    }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.json({ data: demoHomeSummary, mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.post("/api/contact-messages", async (req, res, next) => {
+  try {
+    const body = z
+      .object({
+        name: z.string().max(120).optional().or(z.literal("")).transform((value) => value || undefined),
+        contact: z.string().min(3).max(255),
+        message: z.string().min(5).max(2000),
+        source: z.string().max(64).optional()
+      })
+      .parse(req.body);
+
+    const contactMessage = await prisma.contactMessage.create({
+      data: {
+        name: body.name,
+        contact: body.contact,
+        message: body.message,
+        source: body.source ?? "contact_page",
+        ip: clientIp(req),
+        user_agent: req.header("user-agent")
+      }
+    });
+
+    res.status(201).json(jsonSafe({ data: contactMessage }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({
+        error: "database_unavailable",
+        message: "留言保存需要先启动 PostgreSQL 并执行 Prisma 迁移。"
+      });
+      return;
+    }
+
+    next(error);
+  }
 });
 
 app.get("/api/contents", async (req, res, next) => {

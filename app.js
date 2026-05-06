@@ -23,6 +23,9 @@ const profileGrade = document.querySelector("#profileGrade");
 const profileInterests = document.querySelector("#profileInterests");
 const profileStyles = document.querySelector("#profileStyles");
 const profilePersonalization = document.querySelector("#profilePersonalization");
+const profileLevel = document.querySelector("#profileLevel");
+const profileXpBar = document.querySelector("#profileXpBar");
+const profileXpText = document.querySelector("#profileXpText");
 const contactForm = document.querySelector("#contactForm");
 const contactMessage = document.querySelector("#contactMessage");
 const pongCanvas = document.querySelector("#pongCanvas");
@@ -40,6 +43,7 @@ const penaltyHint = document.querySelector("#penaltyHint");
 const penaltyReset = document.querySelector("#penaltyReset");
 const shotButtons = document.querySelectorAll("[data-shot]");
 let lessonCards = document.querySelectorAll(".lesson-card");
+let latestLearningSummary = null;
 
 const API_BASE_URL = "http://localhost:3001";
 const AUTH_TOKEN_KEY = "aistar_auth_token";
@@ -178,9 +182,20 @@ function gradeLabel(grade) {
 function updateProfilePopover(user = null) {
   const nickname = user?.nickname || "星火少年";
   const firstChar = nickname.slice(0, 1) || "少";
+  const summary = latestLearningSummary || {};
+  const learned = Number(summary.mastered_knowledge_points || 0);
+  const days = Number(summary.learning_days || 0);
+  const streak = Number(summary.streak_days || 0);
+  const level = Math.max(1, Math.floor((learned + days) / 3) + 1);
+  const xp = Math.min(100, (learned * 18 + days * 8 + streak * 12) % 100);
 
   if (profileAvatar) profileAvatar.textContent = firstChar;
   if (profileGreeting) profileGreeting.textContent = `你好，${nickname}！`;
+  if (profileLevel) profileLevel.textContent = user ? `Lv.${level}` : "Lv.0";
+  if (profileXpBar) profileXpBar.style.width = `${user ? Math.max(8, xp) : 0}%`;
+  if (profileXpText) profileXpText.textContent = user
+    ? `${learned} 个知识点 · 连续 ${streak} 天 · 累计 ${days} 天`
+    : "登录后生成学习天数、徽章和知识点记录";
   if (profileGrade) profileGrade.textContent = user?.grade ? gradeLabel(user.grade) : "登录后生成";
   if (profileInterests) profileInterests.textContent = "物理 · AI · 太空 · 游戏";
   if (profileStyles) profileStyles.textContent = "视觉型 · 逻辑型";
@@ -226,9 +241,10 @@ function renderRecommendationCards(items) {
     .map((item, index) => {
       const title = escapeHtml(item.title || item.name || "推荐内容");
       const summary = escapeHtml(item.summary || item.description || item.plain_explanation || "继续探索这个主题。");
-      const subject = escapeHtml(subjectLabel(item.subject));
+      const subject = escapeHtml(subjectLabel(item.subject) || item.category || "推荐");
       const difficulty = escapeHtml(difficultyText(item.difficulty));
       const cardClass = cardClasses[index % cardClasses.length];
+      const href = escapeHtml(item.href || "./knowledge.html");
 
       return `<article class="lesson-card ${cardClass}">
         <div>
@@ -239,7 +255,7 @@ function renderRecommendationCards(items) {
         <div class="card-visual ${index % 2 === 0 ? "chart-visual" : "laptop-visual"}"></div>
         <footer>
           <small>${difficulty}</small>
-          <button type="button">去查看</button>
+          <a class="card-button" href="${href}">去查看</a>
         </footer>
       </article>`;
     })
@@ -268,28 +284,53 @@ function updateFeaturedGame(game) {
 
 async function connectBackend() {
   try {
-    const [health, contents, knowledgePoints, games] = await Promise.all([
+    const [health, homeSummary] = await Promise.all([
       fetchJson("/health"),
-      fetchJson("/api/contents"),
-      fetchJson("/api/knowledge-points"),
-      fetchJson("/api/games")
+      fetchJson("/api/home/summary")
     ]);
 
-    const items = [
-      ...(contents.data || []),
-      ...(games.data || []),
-      ...(knowledgePoints.data || [])
-    ];
+    const data = homeSummary.data || {};
+    latestLearningSummary = data.learning_summary || null;
 
-    renderRecommendationCards(items);
-    updateFeaturedGame(games.data?.[0]);
+    renderRecommendationCards(data.recommendation_cards || []);
+    renderFrontierSummary(data.frontier_summary || []);
+    updateFeaturedGame(data.featured_game);
+    updateProfilePopover(getSavedAuthUser());
 
-    const mode = contents.mode === "demo" || games.mode === "demo" || knowledgePoints.mode === "demo" ? "demo" : "live";
+    const mode = homeSummary.mode === "demo" ? "demo" : "live";
     setBackendStatus(mode, mode === "demo" ? "后端已连接 · Demo 数据" : `后端已连接 · ${health.service}`);
   } catch (error) {
     console.warn("Backend connection failed, using static fallback.", error);
     setBackendStatus("offline", "后端未连接 · 静态内容");
   }
+}
+
+function renderFrontierSummary(items) {
+  const newsRow = document.querySelector(".frontier-box .news-row");
+  if (!newsRow || !items.length) return;
+
+  const classes = ["ai-news", "robot-news", "space-news"];
+  newsRow.innerHTML = items
+    .slice(0, 3)
+    .map((item, index) => `<article class="news-card ${classes[index % classes.length]}">
+      <span>${escapeHtml(frontierCategoryLabel(item.category))}</span>
+      <h3>${escapeHtml(item.title || "今日前沿")}</h3>
+      <p>关联课内知识：${escapeHtml(item.related_knowledge || "科学素养")}</p>
+    </article>`)
+    .join("");
+}
+
+function frontierCategoryLabel(category) {
+  const labels = {
+    ai: "AI 前沿",
+    robotics: "机器人",
+    robot: "机器人",
+    space: "太空",
+    opensource: "开源项目",
+    science: "科学"
+  };
+
+  return labels[category] || "今日前沿";
 }
 
 async function refreshCurrentUser() {
@@ -671,10 +712,33 @@ contactForm?.addEventListener("submit", (event) => {
     return;
   }
 
-  contactMessage.textContent = `${name || "朋友"}，留言已记录在本地演示流程里，后续会接入后台保存。`;
-  contactMessage.className = "contact-message success";
-  contactForm.reset();
+  submitContactMessage({ name, contact, message });
 });
+
+async function submitContactMessage(payload) {
+  if (!contactMessage || !contactForm) return;
+
+  try {
+    contactMessage.textContent = "正在发送留言...";
+    contactMessage.className = "contact-message";
+
+    const response = await fetch(`${API_BASE_URL}/api/contact-messages`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+
+    if (!response.ok) throw new Error(result.message || "留言保存失败");
+
+    contactMessage.textContent = `${payload.name || "朋友"}，留言已保存，我会尽快查看。`;
+    contactMessage.className = "contact-message success";
+    contactForm.reset();
+  } catch (error) {
+    contactMessage.textContent = error.message || "留言发送失败，请先通过邮箱联系我。";
+    contactMessage.className = "contact-message error";
+  }
+}
 
 filterButtons.forEach((button) => {
   button.addEventListener("click", () => {

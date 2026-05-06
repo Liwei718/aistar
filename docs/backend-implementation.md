@@ -9,6 +9,9 @@
 - 完整 `prisma/schema.prisma`，覆盖用户、内容、知识库、小游戏、新闻抓取、AI 草稿、审核、开源项目、推荐、统计和审计。
 - 示例 seed 数据，便于本地联调。
 - 基础查询 API 和游戏记录写入 API。
+- 首页运营摘要 API：用于首页固定运营位、主推游戏、今日前沿摘要和用户学习概览。
+- 数据库持久化登录会话：用户登录 token 不再只保存在进程内存中，服务重启后可继续识别有效 session。
+- 联系留言保存：联系我页面表单已接入后端，留言写入数据库。
 
 ## 本地启动
 
@@ -64,8 +67,34 @@ http://localhost:3001
 | GET | `/api/contents` | 已发布内容列表 |
 | GET | `/api/knowledge-points` | 已发布知识点列表 |
 | GET | `/api/games` | 已发布小游戏列表 |
+| GET | `/api/home/summary` | 首页运营位摘要，包括主推游戏、今日前沿、推荐卡片和学习概览 |
+| POST | `/api/contact-messages` | 保存联系留言 |
 | POST | `/api/game-records` | 写入用户游戏记录 |
 | GET | `/api/recommendations/:userId` | 获取用户推荐结果 |
+
+## 本阶段 P0 优化
+
+按照 `docs/product-operations-review.md` 的 P0 建议，本阶段已完成：
+
+- 修复后端重复注册、登录、退出路由。
+- 新增 `user_sessions` 表，登录 token 以哈希形式持久化保存，退出时标记撤销。
+- 新增 `contact_messages` 表，联系我页面留言可写入数据库。
+- 新增 `/api/home/summary`，首页从单纯拼接多个列表，升级为可控运营摘要接口。
+- 前端统一静态资源版本号为 `20260506b`，减少缓存造成的旧页面问题。
+
+本地数据库说明：
+
+如果本地数据库已有初始表，但没有 `_prisma_migrations` 记录，需要先执行：
+
+```bash
+npx prisma migrate resolve --applied 20260501143000_init
+```
+
+然后再执行：
+
+```bash
+npx prisma migrate deploy
+```
 
 ## 校验命令
 

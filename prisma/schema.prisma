@@ -111,10 +111,29 @@ model User {
   favorites       UserFavorite[]
   badges          UserBadge[]
   recommendations Recommendation[]
+  sessions        UserSession[]
 
   @@index([school_stage, grade])
   @@index([status])
   @@map("users")
+}
+
+model UserSession {
+  token_hash      String    @id @db.VarChar(64)
+  user_id         String    @db.Uuid
+  user_agent      String?
+  ip              String?   @db.Inet
+  created_at      DateTime  @default(now()) @db.Timestamptz(6)
+  last_seen_at    DateTime  @default(now()) @db.Timestamptz(6)
+  expires_at      DateTime  @db.Timestamptz(6)
+  revoked_at      DateTime? @db.Timestamptz(6)
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([expires_at])
+  @@index([revoked_at])
+  @@map("user_sessions")
 }
 
 model AdminUser {
@@ -776,4 +795,20 @@ model DailyStat {
   @@index([dimension_type])
   @@index([dimension_value])
   @@map("daily_stats")
+}
+
+model ContactMessage {
+  id         String   @id @default(uuid()) @db.Uuid
+  name       String?  @db.VarChar(120)
+  contact    String   @db.VarChar(255)
+  message    String
+  source     String   @default("contact_page") @db.VarChar(64)
+  status     String   @default("new") @db.VarChar(32)
+  ip         String?  @db.Inet
+  user_agent String?
+  created_at DateTime @default(now()) @db.Timestamptz(6)
+
+  @@index([status])
+  @@index([created_at])
+  @@map("contact_messages")
 }
