@@ -21,7 +21,7 @@
 | 首页 | `index.html` + `app.js` | `/health`、`/api/home/summary`、`/api/users/me/activity`、收藏和行为记录接口 | 已完成运营摘要、学习活动和个性化推荐第一版 | 首页已具备推荐、继续学习、最近学习和收藏反馈，下一步做后台可配置规则 |
 | 注册 / 登录 / 退出 | 首页弹窗 | `/api/auth/register`、`/api/auth/login`、`/api/auth/me`、`/api/auth/logout` | 已接入 | 可支持用户体系起步，但 session 存在内存中，重启后失效，不适合正式运营 |
 | 用户资料浮窗 | 首页右上角 | `/api/auth/me` | 局部接入 | 当前只展示注册信息和静态标签，尚未接入真实兴趣、学习行为和徽章 |
-| 今日前沿 | `frontier.html` + `frontier.js` | `/api/frontier/summary`、`/api/frontier/items`、`/api/frontier/today-news`、`/api/frontier/items/:id` | 已完成动态化第一版 | 已能从后端读取列表和当天新闻，下一步接自动抓取与审核流 |
+| 今日前沿 | `frontier.html` + `frontier.js` | `/api/frontier/summary`、`/api/frontier/items`、`/api/frontier/today-news`、`/api/frontier/items/:id`、后台 `frontier_fetch` 任务 | 已完成动态化和抓取审核闭环第一版 | 已能从后端读取列表，并可由后台任务生成 AI 草稿和待审核内容，下一步接真实 RSS / 网页解析 |
 | 开源项目 | `projects.html` + `projects.js` | `/api/projects/rankings/current`、`/api/projects/rankings`、`/api/projects/:id` | 已完成动态化第一版 | 已能读取当前周榜、历史榜单和项目详情，下一步接 GitHub 自动抓取 |
 | 中小学知识 | `knowledge.html` + `knowledge.js` | `/api/knowledge-points`、`/api/knowledge-points/:id`、`/api/knowledge-points/:id/progress` | 已完成动态化第一版 | 已有详情、视频、任务和学习进度，下一步扩充题库和真实视频源 |
 | AI 学习 | `ai-learning.html` | 已接入书籍、章节、任务和阅读进度接口 | 静态 PDF + 导读 + 进度 | 适合做首个高质量内容产品，后续可扩展更多书籍和徽章 |
@@ -249,7 +249,7 @@ AI 生成介绍、学习价值、改造任务
 ### P1：打通可持续运营闭环
 
 - 已完成第一版：今日前沿接入动态接口，前端页面读取后端摘要、列表和当天新闻。
-- 待继续：今日前沿接入自动抓取、AI 草稿和人工审核发布流程。
+- 已完成第一版：今日前沿接入后台任务控制，运行 `frontier_fetch` 后可生成新闻素材、AI 草稿、待审核内容和审核任务。
 - 已完成第一版：开源项目接入动态接口、周榜和历史榜单。
 - 待继续：开源项目接入 GitHub 自动抓取、AI 改写和人工审核流程。
 - 已完成第一版：AI 学习接入书籍、章节、阅读任务和阅读进度。

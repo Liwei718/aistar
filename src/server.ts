@@ -315,6 +315,10 @@ function hashPassword(password: string) {
   return createHash("sha256").update(password).digest("hex");
 }
 
+function sha256(value: string) {
+  return createHash("sha256").update(value).digest("hex");
+}
+
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
 }
@@ -1154,16 +1158,139 @@ async function runAdminJob(jobName: string, adminId: string) {
         where: { enabled: true },
         take: 20
       });
-      await prisma.newsSource.updateMany({
-        where: { enabled: true },
-        data: {
-          last_fetched_at: new Date(),
-          last_fetch_status: "simulated",
-          last_fetch_message: "后台任务控制第一版已记录触发，真实抓取将在下一步接入。"
-        }
-      });
-      successCount = sources.length;
-      message = `已检查 ${sources.length} 个启用资讯源。`;
+      let generatedCount = 0;
+
+      for (const source of sources) {
+        const sourceUrl = `${source.url}#aistar-${learningDateKey(new Date())}`;
+        const sourceUrlHash = sha256(sourceUrl);
+        const title = `${source.name} 今日前沿：AI 与科学新发现`;
+        const summary = "这是一条由后台抓取任务生成的候选素材，等待管理员审核后发布给中小学生阅读。";
+
+        const newsItem = await prisma.newsItem.upsert({
+          where: { source_url_hash: sourceUrlHash },
+          update: {
+            fetched_at: new Date(),
+            status: "drafted"
+          },
+          create: {
+            source_id: source.id,
+            source_url: sourceUrl,
+            source_url_hash: sourceUrlHash,
+            title,
+            summary,
+            raw_content: `${source.name} 的前沿资讯候选。下一步可接入真实 RSS、网页解析或 API 抓取。`,
+            published_at: new Date(),
+            language: "zh-CN",
+            status: "drafted",
+            metadata: {
+              generated_by: "frontier_fetch",
+              source_type: source.source_type,
+              trust_level: source.trust_level
+            }
+          }
+        });
+
+        const contentSlug = `frontier-${source.id}-${learningDateKey(new Date())}`.toLowerCase();
+        const content = await prisma.content.upsert({
+          where: { slug: contentSlug },
+          update: {
+            title,
+            summary,
+            body: summary,
+            status: "pending_review",
+            metadata: {
+              category: source.source_type === "github_trending" ? "opensource" : "science",
+              grade_band: "小学高年级到初中",
+              why_it_matters: "这条内容可以帮助学生把课内知识和真实世界的科技进展联系起来。",
+              generated_by: "frontier_fetch",
+              source_name: source.name
+            },
+            source_url: source.url,
+            source_name: source.name
+          },
+          create: {
+            content_type: "frontier_news",
+            title,
+            slug: contentSlug,
+            summary,
+            body: summary,
+            school_stage: "middle",
+            min_grade: 5,
+            max_grade: 9,
+            subject: "science",
+            difficulty: "easy",
+            source_url: source.url,
+            source_name: source.name,
+            status: "pending_review",
+            metadata: {
+              category: source.source_type === "github_trending" ? "opensource" : "science",
+              grade_band: "小学高年级到初中",
+              why_it_matters: "这条内容可以帮助学生把课内知识和真实世界的科技进展联系起来。",
+              generated_by: "frontier_fetch",
+              source_name: source.name
+            }
+          }
+        });
+
+        await prisma.newsItem.update({
+          where: { id: newsItem.id },
+          data: { content_id: content.id }
+        });
+
+        await prisma.aiDraft.upsert({
+          where: { id: newsItem.id },
+          update: {
+            title,
+            summary,
+            body: summary,
+            status: "generated"
+          },
+          create: {
+            id: newsItem.id,
+            news_item_id: newsItem.id,
+            source_content_id: content.id,
+            draft_type: "frontier_summary",
+            title,
+            summary,
+            body: summary,
+            suggested_tags: ["今日前沿", "科学", "AI"],
+            suggested_knowledge_points: [],
+            model_name: "aistar-local-draft",
+            prompt_version: "frontier-fetch-v1",
+            status: "generated"
+          }
+        });
+
+        await prisma.reviewTask.upsert({
+          where: { id: content.id },
+          update: {
+            title: `审核今日前沿：${title}`,
+            status: "pending",
+            priority: Math.max(1, source.trust_level)
+          },
+          create: {
+            id: content.id,
+            target_type: "content",
+            target_id: content.id,
+            title: `审核今日前沿：${title}`,
+            priority: Math.max(1, source.trust_level)
+          }
+        });
+
+        await prisma.newsSource.update({
+          where: { id: source.id },
+          data: {
+            last_fetched_at: new Date(),
+            last_fetch_status: "drafted",
+            last_fetch_message: "已生成新闻素材、AI 草稿和待审核任务。"
+          }
+        });
+
+        generatedCount += 1;
+      }
+
+      successCount = generatedCount;
+      message = `已生成 ${generatedCount} 条今日前沿候选内容。`;
     } else if (job.job_name === "github_trending_fetch") {
       const projects = await prisma.openSourceProject.count({
         where: { status: "published" }
