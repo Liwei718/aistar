@@ -1227,6 +1227,8 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/admin/auth/me", description: "当前管理员信息" },
       { method: "POST", path: "/api/admin/auth/logout", description: "管理员退出" },
       { method: "GET", path: "/api/admin/dashboard", description: "运营后台首页看板数据" },
+      { method: "GET", path: "/api/admin/contents", description: "后台内容列表" },
+      { method: "PATCH", path: "/api/admin/contents/:id", description: "后台更新内容标题、摘要和状态" },
       { method: "GET", path: "/api/frontier/summary", description: "今日前沿首页摘要" },
       { method: "GET", path: "/api/frontier/items", description: "今日前沿完整列表" },
       { method: "GET", path: "/api/frontier/today-news", description: "今日前沿当天新闻" },
@@ -1837,6 +1839,114 @@ app.get("/api/admin/dashboard", async (req, res, next) => {
         mode: "demo",
         warning: "database_unavailable"
       });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/admin/contents", async (req, res, next) => {
+  try {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+
+    const query = listQuerySchema
+      .extend({
+        status: z.enum(["all", "draft", "pending_review", "published", "offline", "rejected"]).default("all"),
+        content_type: z.string().optional()
+      })
+      .parse(req.query);
+
+    const contents = await prisma.content.findMany({
+      where: {
+        deleted_at: null,
+        ...(query.status === "all" ? {} : { status: query.status as never }),
+        ...(query.content_type ? { content_type: query.content_type as never } : {})
+      },
+      orderBy: [{ updated_at: "desc" }, { created_at: "desc" }],
+      take: query.limit,
+      skip: query.offset,
+      select: {
+        id: true,
+        content_type: true,
+        title: true,
+        summary: true,
+        school_stage: true,
+        min_grade: true,
+        max_grade: true,
+        subject: true,
+        difficulty: true,
+        status: true,
+        published_at: true,
+        view_count: true,
+        favorite_count: true,
+        updated_at: true,
+        editor: {
+          select: {
+            name: true
+          }
+        }
+      }
+    });
+
+    res.json(jsonSafe({ data: contents }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "读取后台内容列表需要数据库连接。" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.patch("/api/admin/contents/:id", async (req, res, next) => {
+  try {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+
+    const params = z.object({ id: z.string().uuid() }).parse(req.params);
+    const body = z
+      .object({
+        title: z.string().min(2).max(200).optional(),
+        summary: z.string().max(1000).nullable().optional(),
+        status: z.enum(["draft", "pending_review", "published", "offline", "rejected"]).optional()
+      })
+      .parse(req.body);
+
+    const content = await prisma.content.findFirst({
+      where: {
+        id: params.id,
+        deleted_at: null
+      }
+    });
+
+    if (!content) {
+      res.status(404).json({ error: "not_found", message: "未找到内容" });
+      return;
+    }
+
+    const updated = await prisma.content.update({
+      where: { id: params.id },
+      data: {
+        ...(body.title !== undefined ? { title: body.title } : {}),
+        ...(body.summary !== undefined ? { summary: body.summary } : {}),
+        ...(body.status !== undefined
+          ? {
+              status: body.status as never,
+              published_at: body.status === "published" && !content.published_at ? new Date() : content.published_at,
+              offline_at: body.status === "offline" ? new Date() : content.offline_at
+            }
+          : {}),
+        editor_id: admin.id
+      }
+    });
+
+    res.json(jsonSafe({ data: updated }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "更新后台内容需要数据库连接。" });
       return;
     }
 

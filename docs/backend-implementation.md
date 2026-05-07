@@ -23,6 +23,7 @@
 - 首页个性化推荐第一版：推荐卡按年级、兴趣、收藏、点击行为和新鲜度做轻量排序，并返回推荐理由。
 - 运营看板第一版：新增只读运营后台页面和指标接口，聚合用户、内容、学习、游戏、收藏、点击和审核队列数据。
 - 管理员登录第一版：运营看板已接入管理员登录保护，未登录不能读取后台指标。
+- 后台内容管理第一版：管理员可查看内容列表，按状态筛选，并编辑标题、摘要和发布状态。
 
 ## 本地启动
 
@@ -91,6 +92,8 @@ http://localhost:3001
 | GET | `/api/admin/auth/me` | 当前管理员信息 |
 | POST | `/api/admin/auth/logout` | 管理员退出 |
 | GET | `/api/admin/dashboard` | 运营后台首页看板数据 |
+| GET | `/api/admin/contents` | 后台内容列表，支持 `status`、`content_type`、分页 |
+| PATCH | `/api/admin/contents/:id` | 后台更新内容标题、摘要和发布状态 |
 | GET | `/api/frontier/summary` | 今日前沿首页摘要 |
 | GET | `/api/frontier/items` | 今日前沿完整列表，支持 `category`、`grade`、分页 |
 | GET | `/api/frontier/today-news` | 今日前沿当天新闻 |
@@ -190,7 +193,8 @@ AI 学习动态化：
 - 默认本地管理员账号为 `admin@aistar.local`，默认密码为 `admin123456`；可通过 `ADMIN_EMAIL`、`ADMIN_PASSWORD`、`ADMIN_NAME`、`ADMIN_TOKEN_TTL_HOURS` 修改。
 - 新增 `/api/admin/dashboard`，聚合活跃用户、7 日新增、发布内容、知识点、学习完成、游戏完成、收藏、推荐点击、待审核和 AI 草稿等核心指标。
 - 新增 `admin.html` 和 `admin.js`，展示核心指标、内容结构、热门内容、最近学习行为、小游戏成绩和待审核队列。
-- 当前仍是只读本地运营页，后续再接内容编辑、审核发布和自动抓取任务控制。
+- 新增 `/api/admin/contents` 和 `/api/admin/contents/:id`，管理员可在后台按状态查看内容，并编辑标题、摘要和发布状态。
+- 当前后台已支持基础内容管理，后续再接审核发布和自动抓取任务控制。
 
 本地数据库说明：
 

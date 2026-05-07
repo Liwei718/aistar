@@ -14,6 +14,10 @@ const adminDashboard = document.querySelector("#adminDashboard");
 const adminLoginForm = document.querySelector("#adminLoginForm");
 const adminLoginMessage = document.querySelector("#adminLoginMessage");
 const adminLogout = document.querySelector("#adminLogout");
+const adminContentList = document.querySelector("#adminContentList");
+const adminContentMessage = document.querySelector("#adminContentMessage");
+const contentStatusFilter = document.querySelector("#contentStatusFilter");
+const reloadContents = document.querySelector("#reloadContents");
 
 function adminAuthHeaders(extra = {}) {
   const token = localStorage.getItem(ADMIN_TOKEN_KEY);
@@ -76,6 +80,24 @@ function contentTypeLabel(type) {
   };
 
   return labels[type] || type || "内容";
+}
+
+function statusLabel(status) {
+  const labels = {
+    draft: "草稿",
+    pending_review: "待审核",
+    published: "已发布",
+    offline: "已下线",
+    rejected: "已拒绝"
+  };
+
+  return labels[status] || status || "未知";
+}
+
+function setAdminContentMessage(message, type = "") {
+  if (!adminContentMessage) return;
+  adminContentMessage.className = `admin-content-message ${type}`;
+  adminContentMessage.textContent = message;
 }
 
 function renderMetricCards(metrics) {
@@ -160,6 +182,91 @@ function renderDashboard(data) {
   `);
 }
 
+function renderAdminContents(items) {
+  if (!adminContentList) return;
+
+  if (!items.length) {
+    adminContentList.innerHTML = '<div class="admin-empty">暂无内容。</div>';
+    return;
+  }
+
+  adminContentList.innerHTML = items.map((item) => `
+    <form class="admin-content-row" data-content-id="${escapeAdminHtml(item.id)}">
+      <div class="admin-content-meta">
+        <b>${escapeAdminHtml(contentTypeLabel(item.content_type))}</b>
+        <span>${escapeAdminHtml(statusLabel(item.status))}</span>
+        <small>${formatNumber(item.favorite_count)} 收藏 · ${formatNumber(item.view_count)} 浏览</small>
+      </div>
+      <label>
+        <span>标题</span>
+        <input name="title" value="${escapeAdminHtml(item.title)}" maxlength="200" required />
+      </label>
+      <label>
+        <span>摘要</span>
+        <textarea name="summary" rows="2" maxlength="1000">${escapeAdminHtml(item.summary || "")}</textarea>
+      </label>
+      <label>
+        <span>状态</span>
+        <select name="status">
+          ${["draft", "pending_review", "published", "offline", "rejected"].map((status) => `
+            <option value="${status}" ${item.status === status ? "selected" : ""}>${statusLabel(status)}</option>
+          `).join("")}
+        </select>
+      </label>
+      <button type="submit">保存</button>
+    </form>
+  `).join("");
+}
+
+async function loadAdminContents() {
+  if (!adminContentList) return;
+
+  try {
+    const status = contentStatusFilter?.value || "all";
+    adminContentList.innerHTML = '<div class="admin-empty">正在读取内容...</div>';
+    const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/contents?status=${encodeURIComponent(status)}&limit=20`, {
+      headers: adminAuthHeaders()
+    });
+    if (response.status === 401) {
+      showAdminLogin();
+      return;
+    }
+    if (!response.ok) throw new Error("contents_unavailable");
+    const payload = await response.json();
+    renderAdminContents(payload.data || []);
+  } catch (error) {
+    console.warn("Admin contents failed.", error);
+    adminContentList.innerHTML = '<div class="admin-empty">内容列表读取失败，请确认后端已启动。</div>';
+  }
+}
+
+async function updateAdminContent(form) {
+  const contentId = form.dataset.contentId;
+  if (!contentId) return;
+
+  const formData = new FormData(form);
+  const payload = {
+    title: String(formData.get("title") || "").trim(),
+    summary: String(formData.get("summary") || "").trim(),
+    status: String(formData.get("status") || "")
+  };
+
+  try {
+    setAdminContentMessage("正在保存内容...");
+    const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/contents/${contentId}`, {
+      method: "PATCH",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "保存失败");
+    setAdminContentMessage("内容已保存。", "success");
+    await Promise.all([loadAdminContents(), loadAdminDashboard()]);
+  } catch (error) {
+    setAdminContentMessage(error.message || "保存失败", "error");
+  }
+}
+
 async function loadAdminDashboard() {
   try {
     const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/dashboard`, {
@@ -210,7 +317,7 @@ async function refreshAdmin() {
 
     localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(payload.data));
     showAdminDashboard(payload.data);
-    await loadAdminDashboard();
+    await Promise.all([loadAdminDashboard(), loadAdminContents()]);
   } catch (error) {
     console.warn("Admin auth refresh failed.", error);
     showAdminLogin();
@@ -239,7 +346,7 @@ adminLoginForm?.addEventListener("submit", async (event) => {
     localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(result.data.admin));
     showAdminDashboard(result.data.admin);
     setAdminLoginMessage("登录成功", "success");
-    await loadAdminDashboard();
+    await Promise.all([loadAdminDashboard(), loadAdminContents()]);
   } catch (error) {
     setAdminLoginMessage(error.message || "登录失败", "error");
   }
@@ -257,5 +364,13 @@ adminLogout?.addEventListener("click", async () => {
     showAdminLogin();
   }
 });
+
+adminContentList?.addEventListener("submit", (event) => {
+  event.preventDefault();
+  updateAdminContent(event.target);
+});
+
+contentStatusFilter?.addEventListener("change", loadAdminContents);
+reloadContents?.addEventListener("click", loadAdminContents);
 
 refreshAdmin();

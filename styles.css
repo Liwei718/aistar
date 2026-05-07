@@ -1791,6 +1791,115 @@ input[type="range"] {
   font-weight: 900;
 }
 
+.admin-content-head {
+  align-items: flex-end;
+}
+
+.admin-content-tools {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.admin-content-tools select,
+.admin-content-tools button,
+.admin-content-row input,
+.admin-content-row textarea,
+.admin-content-row select {
+  border: 1px solid rgba(16, 32, 61, 0.14);
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.admin-content-tools select,
+.admin-content-tools button {
+  min-height: 34px;
+  padding: 0 10px;
+  font-weight: 850;
+}
+
+.admin-content-tools button,
+.admin-content-row button {
+  border-color: #2457ff;
+  background: #2457ff;
+  color: #fff;
+}
+
+.admin-content-list {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-content-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.7fr) minmax(160px, 1.1fr) minmax(220px, 1.5fr) minmax(110px, 0.7fr) 72px;
+  gap: 10px;
+  align-items: end;
+  padding: 12px;
+  border: 1px solid rgba(16, 32, 61, 0.08);
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.admin-content-meta {
+  display: grid;
+  gap: 5px;
+  align-self: center;
+}
+
+.admin-content-meta b {
+  color: #10203d;
+}
+
+.admin-content-meta span,
+.admin-content-meta small,
+.admin-content-row label span {
+  color: #6c788d;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.admin-content-row label {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-content-row input,
+.admin-content-row textarea,
+.admin-content-row select {
+  width: 100%;
+  min-height: 38px;
+  padding: 8px 10px;
+  font: inherit;
+}
+
+.admin-content-row textarea {
+  resize: vertical;
+}
+
+.admin-content-row button {
+  min-height: 38px;
+  border: 0;
+  border-radius: 8px;
+  font-weight: 900;
+}
+
+.admin-content-message {
+  min-height: 22px;
+  margin-top: 10px;
+  color: #6c788d;
+  font-size: 13px;
+}
+
+.admin-content-message.success {
+  color: #16845f;
+}
+
+.admin-content-message.error {
+  color: #d64545;
+}
+
 .admin-empty {
   padding: 18px;
   border: 1px dashed rgba(16, 32, 61, 0.16);
@@ -5058,6 +5167,10 @@ input[type="range"] {
 
   .admin-hero {
     display: grid;
+  }
+
+  .admin-content-row {
+    grid-template-columns: 1fr;
   }
 
   .leaderboard-row,

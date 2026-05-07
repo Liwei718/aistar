@@ -100,6 +100,28 @@
           </div>
           <div class="admin-list" id="reviewQueue"></div>
         </article>
+
+        <article class="admin-panel admin-panel-wide">
+          <div class="admin-panel-head admin-content-head">
+            <div>
+              <h2>内容管理</h2>
+              <span>编辑标题、摘要和状态</span>
+            </div>
+            <div class="admin-content-tools">
+              <select id="contentStatusFilter" aria-label="内容状态筛选">
+                <option value="all">全部状态</option>
+                <option value="published">已发布</option>
+                <option value="draft">草稿</option>
+                <option value="pending_review">待审核</option>
+                <option value="offline">已下线</option>
+                <option value="rejected">已拒绝</option>
+              </select>
+              <button type="button" id="reloadContents">刷新</button>
+            </div>
+          </div>
+          <div class="admin-content-list" id="adminContentList"></div>
+          <p class="admin-content-message" id="adminContentMessage"></p>
+        </article>
       </section>
       </section>
     </main>
