@@ -15,6 +15,11 @@ const hermesBaseUrl = process.env.HERMES_API_BASE_URL ?? "http://localhost:11434
 const hermesModel = process.env.HERMES_MODEL ?? "hermes3";
 const hermesApiFormat = process.env.HERMES_API_FORMAT ?? "auto";
 const hermesCliPath = process.env.HERMES_CLI_PATH ?? "/Users/martinxu/.local/bin/hermes";
+const githubToken = process.env.GITHUB_TOKEN;
+const githubSearchTopics = (process.env.GITHUB_SEARCH_TOPICS ?? "ai,machine-learning,education,science,game")
+  .split(",")
+  .map((topic) => topic.trim())
+  .filter(Boolean);
 const allowedOrigins = process.env.FRONTEND_ORIGIN?.split(",").map((origin) => origin.trim()) ?? [
   "http://localhost:3000",
   "http://localhost:3002",
@@ -387,6 +392,22 @@ const adminJobCatalog = [
     cadence: "每周"
   }
 ];
+
+type ProjectCandidate = {
+  name: string;
+  slug: string;
+  repoUrl: string;
+  description: string;
+  readmeSummary: string;
+  stars: number;
+  forks: number;
+  language: string | null;
+  license: string | null;
+  category: string;
+  growth: number;
+  repoUpdatedAt: Date | null;
+  source: "github_api" | "fallback";
+};
 
 function addSignal(signalMap: Map<string, number>, key: string | null | undefined, weight: number) {
   if (!key) return;
@@ -1133,6 +1154,133 @@ async function requireAdmin(req: express.Request, res: express.Response) {
   return admin;
 }
 
+function fallbackProjectCandidates(todayKey: string): ProjectCandidate[] {
+  return [
+    ["KidAI Lab", "面向学生的 AI 实验项目模板。", "Python", "ai", 1840],
+    ["Mini Physics Engine", "用浏览器模拟运动、碰撞和能量变化。", "TypeScript", "science", 1620],
+    ["Prompt Playground CN", "适合中文提示词练习的交互沙盒。", "JavaScript", "ai", 1490],
+    ["Math Visual Cards", "把函数、几何和统计图做成互动卡片。", "TypeScript", "science", 1330],
+    ["Student Robotics Kit", "入门机器人控制和传感器模拟。", "Python", "robotics", 1210],
+    ["Tiny Game Lessons", "用小游戏讲解数学和科学概念。", "JavaScript", "game", 1120],
+    ["Open Notebook Tutor", "可改造成学习笔记助手的开源项目。", "Python", "beginner", 980],
+    ["Science Video Index", "整理科学视频并生成学习任务。", "TypeScript", "science", 870],
+    ["AI Safety Detective", "练习识别 AI 错误和不可靠回答。", "Python", "ai", 790],
+    ["Campus Code Quest", "适合校园编程社团的闯关项目。", "JavaScript", "beginner", 720]
+  ].map(([name, description, language, category, growth], index) => {
+    const slug = `${String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${todayKey}`;
+    const stars = Number(growth) + 5000 + index * 137;
+
+    return {
+      name: String(name),
+      slug,
+      repoUrl: `https://github.com/aistar-demo/${slug}`,
+      description: String(description),
+      readmeSummary: `${description} 适合中小学生在老师或家长帮助下拆解学习。`,
+      stars,
+      forks: Math.round(stars / 14),
+      language: String(language),
+      license: "MIT",
+      category: String(category),
+      growth: Number(growth),
+      repoUpdatedAt: new Date(),
+      source: "fallback"
+    };
+  });
+}
+
+function projectCategoryFromGitHub(repo: Record<string, unknown>, topic: string) {
+  const text = `${topic} ${repo.name || ""} ${repo.description || ""} ${Array.isArray(repo.topics) ? repo.topics.join(" ") : ""}`.toLowerCase();
+  if (text.includes("game")) return "game";
+  if (text.includes("robot")) return "robotics";
+  if (text.includes("education") || text.includes("learn") || text.includes("tutorial")) return "beginner";
+  if (text.includes("math") || text.includes("physics") || text.includes("science")) return "science";
+  return "ai";
+}
+
+async function fetchGitHubProjectCandidates(todayKey: string) {
+  const since = learningDateKey(addDays(new Date(), -14));
+  const candidates = new Map<string, ProjectCandidate>();
+  const topics = githubSearchTopics.length ? githubSearchTopics : ["ai"];
+
+  for (const topic of topics) {
+    if (candidates.size >= 10) break;
+
+    const query = new URLSearchParams({
+      q: `topic:${topic} stars:>=50 pushed:>=${since}`,
+      sort: "stars",
+      order: "desc",
+      per_page: "10"
+    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 12000);
+
+    try {
+      const headers: Record<string, string> = {
+        Accept: "application/vnd.github+json",
+        "X-GitHub-Api-Version": "2022-11-28",
+        "User-Agent": "aistar-local-admin"
+      };
+      if (githubToken) headers.Authorization = `Bearer ${githubToken}`;
+
+      const response = await fetch(`https://api.github.com/search/repositories?${query}`, {
+        headers,
+        signal: controller.signal
+      });
+
+      if (!response.ok) {
+        throw new Error(`GitHub API ${response.status}`);
+      }
+
+      const payload = await response.json() as { items?: Array<Record<string, unknown>> };
+      for (const repo of payload.items || []) {
+        const repoUrl = typeof repo.html_url === "string" ? repo.html_url : "";
+        const fullName = typeof repo.full_name === "string" ? repo.full_name : typeof repo.name === "string" ? repo.name : "";
+        if (!repoUrl || !fullName || candidates.has(repoUrl)) continue;
+
+        const stars = Number(repo.stargazers_count || 0);
+        const forks = Number(repo.forks_count || 0);
+        const description = typeof repo.description === "string" && repo.description
+          ? repo.description
+          : "这个开源项目适合用来观察真实软件如何组织功能。";
+        const slug = `${fullName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${todayKey}`.slice(0, 170);
+
+        candidates.set(repoUrl, {
+          name: fullName,
+          slug,
+          repoUrl,
+          description,
+          readmeSummary: `${description} 可以从 README、示例和 issue 中学习项目结构。`,
+          stars,
+          forks,
+          language: typeof repo.language === "string" ? repo.language : null,
+          license: repo.license && typeof repo.license === "object" && "spdx_id" in repo.license
+            ? String((repo.license as Record<string, unknown>).spdx_id)
+            : null,
+          category: projectCategoryFromGitHub(repo, topic),
+          growth: stars,
+          repoUpdatedAt: typeof repo.updated_at === "string" ? new Date(repo.updated_at) : null,
+          source: "github_api"
+        });
+
+        if (candidates.size >= 10) break;
+      }
+    } finally {
+      clearTimeout(timeout);
+    }
+  }
+
+  const result = [...candidates.values()];
+  if (result.length >= 10) return result.slice(0, 10);
+
+  const fallback = fallbackProjectCandidates(todayKey);
+  for (const item of fallback) {
+    if (result.length >= 10) break;
+    if (!result.some((candidate) => candidate.repoUrl === item.repoUrl)) result.push(item);
+  }
+
+  return result.slice(0, 10);
+}
+
 async function runAdminJob(jobName: string, adminId: string) {
   const job = adminJobCatalog.find((item) => item.job_name === jobName);
   if (!job) return null;
@@ -1293,86 +1441,88 @@ async function runAdminJob(jobName: string, adminId: string) {
       message = `已生成 ${generatedCount} 条今日前沿候选内容。`;
     } else if (job.job_name === "github_trending_fetch") {
       const todayKey = learningDateKey(new Date());
-      const projectSeeds = [
-        ["KidAI Lab", "面向学生的 AI 实验项目模板。", "Python", "ai", 1840],
-        ["Mini Physics Engine", "用浏览器模拟运动、碰撞和能量变化。", "TypeScript", "science", 1620],
-        ["Prompt Playground CN", "适合中文提示词练习的交互沙盒。", "JavaScript", "ai", 1490],
-        ["Math Visual Cards", "把函数、几何和统计图做成互动卡片。", "TypeScript", "science", 1330],
-        ["Student Robotics Kit", "入门机器人控制和传感器模拟。", "Python", "robotics", 1210],
-        ["Tiny Game Lessons", "用小游戏讲解数学和科学概念。", "JavaScript", "game", 1120],
-        ["Open Notebook Tutor", "可改造成学习笔记助手的开源项目。", "Python", "beginner", 980],
-        ["Science Video Index", "整理科学视频并生成学习任务。", "TypeScript", "science", 870],
-        ["AI Safety Detective", "练习识别 AI 错误和不可靠回答。", "Python", "ai", 790],
-        ["Campus Code Quest", "适合校园编程社团的闯关项目。", "JavaScript", "beginner", 720]
-      ];
+      let projectCandidates: ProjectCandidate[];
+      let usedFallback = false;
+
+      try {
+        projectCandidates = await fetchGitHubProjectCandidates(todayKey);
+        usedFallback = projectCandidates.some((item) => item.source === "fallback");
+      } catch (error) {
+        projectCandidates = fallbackProjectCandidates(todayKey);
+        usedFallback = true;
+        message = error instanceof Error ? `GitHub API 失败，已使用本地兜底：${error.message}` : "GitHub API 失败，已使用本地兜底。";
+      }
 
       const ranking = await prisma.projectRanking.create({
         data: {
-          name: `${todayKey} GitHub 项目增长候选榜`,
+          name: `${todayKey} GitHub 项目增长榜`,
           ranking_type: "weekly_growth",
-          description: "由后台任务生成的开源项目增长榜第一版，后续可替换为真实 GitHub API 抓取。",
+          description: usedFallback
+            ? "GitHub API 不可用或结果不足时，由本地候选补齐的开源项目增长榜。"
+            : "由 GitHub Search API 抓取生成的开源项目增长榜。",
           enabled: true
         }
       });
 
-      for (const [index, seed] of projectSeeds.entries()) {
-        const [name, description, language, category, growth] = seed;
-        const slug = `${String(name).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}-${todayKey}`;
-        const repoUrl = `https://github.com/aistar-demo/${slug}`;
-        const stars = Number(growth) + 5000 + index * 137;
-
+      for (const [index, item] of projectCandidates.entries()) {
         const project = await prisma.openSourceProject.upsert({
-          where: { repo_url_hash: sha256(repoUrl) },
+          where: { repo_url_hash: sha256(item.repoUrl) },
           update: {
-            name: String(name),
-            description: String(description),
-            readme_summary: `${description} 适合中小学生在老师或家长帮助下拆解学习。`,
-            stars,
-            forks: Math.round(stars / 14),
-            language: String(language),
-            license: "MIT",
+            name: item.name,
+            description: item.description,
+            readme_summary: item.readmeSummary,
+            stars: item.stars,
+            forks: item.forks,
+            language: item.language,
+            license: item.license,
             school_stage: "middle",
             min_grade: 6,
             max_grade: 9,
             difficulty: index < 3 ? "normal" : "easy",
             learning_value: "学习如何阅读开源项目、拆分功能，并把它改造成自己的作品。",
-            recommend_reason: `本周星标增长约 ${growth}，主题适合 AI 与科学学习。`,
+            recommend_reason: item.source === "github_api"
+              ? `GitHub 最近活跃且星标较高，主题适合 AI 与科学学习。`
+              : `本周星标增长约 ${item.growth}，主题适合 AI 与科学学习。`,
             remix_ideas: "增加中文说明、任务卡、关卡或知识点提示，再做成课堂展示项目。",
             metadata: {
-              category,
-              weekly_star_growth: growth,
+              category: item.category,
+              weekly_star_growth: item.growth,
+              github_source: item.source,
               generated_by: "github_trending_fetch",
               generated_at: new Date().toISOString()
             },
             status: "published",
-            repo_updated_at: new Date()
+            repo_updated_at: item.repoUpdatedAt
           },
           create: {
-            name: String(name),
-            slug,
-            repo_url: repoUrl,
-            repo_url_hash: sha256(repoUrl),
-            description: String(description),
-            readme_summary: `${description} 适合中小学生在老师或家长帮助下拆解学习。`,
-            stars,
-            forks: Math.round(stars / 14),
-            language: String(language),
-            license: "MIT",
+            name: item.name,
+            slug: item.slug,
+            repo_url: item.repoUrl,
+            repo_url_hash: sha256(item.repoUrl),
+            description: item.description,
+            readme_summary: item.readmeSummary,
+            stars: item.stars,
+            forks: item.forks,
+            language: item.language,
+            license: item.license,
             school_stage: "middle",
             min_grade: 6,
             max_grade: 9,
             difficulty: index < 3 ? "normal" : "easy",
             learning_value: "学习如何阅读开源项目、拆分功能，并把它改造成自己的作品。",
-            recommend_reason: `本周星标增长约 ${growth}，主题适合 AI 与科学学习。`,
+            recommend_reason: item.source === "github_api"
+              ? `GitHub 最近活跃且星标较高，主题适合 AI 与科学学习。`
+              : `本周星标增长约 ${item.growth}，主题适合 AI 与科学学习。`,
             remix_ideas: "增加中文说明、任务卡、关卡或知识点提示，再做成课堂展示项目。",
             metadata: {
-              category,
-              weekly_star_growth: growth,
+              category: item.category,
+              weekly_star_growth: item.growth,
+              github_source: item.source,
               generated_by: "github_trending_fetch",
               generated_at: new Date().toISOString()
             },
             status: "published",
-            repo_updated_at: new Date()
+            repo_updated_at: item.repoUpdatedAt
           }
         });
 
@@ -1381,13 +1531,19 @@ async function runAdminJob(jobName: string, adminId: string) {
             ranking_id: ranking.id,
             project_id: project.id,
             rank_no: index + 1,
-            reason: `本周星标增长约 ${growth}，适合学生阅读、试玩和二次改造。`
+            reason: item.source === "github_api"
+              ? `来自 GitHub Search API，近期活跃且星标较高，适合学生阅读、试玩和二次改造。`
+              : `本周星标增长约 ${item.growth}，适合学生阅读、试玩和二次改造。`
           }
         });
       }
 
-      successCount = projectSeeds.length;
-      message = `已生成 ${projectSeeds.length} 个开源项目候选，并保存新的周榜。`;
+      successCount = projectCandidates.length;
+      message = message || (
+        usedFallback
+          ? `已通过 GitHub API + 本地兜底生成 ${projectCandidates.length} 个开源项目候选，并保存新的周榜。`
+          : `已通过 GitHub API 生成 ${projectCandidates.length} 个开源项目候选，并保存新的周榜。`
+      );
     }
 
     const finishedAt = new Date();

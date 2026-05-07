@@ -28,6 +28,7 @@
 - 后台自动化任务控制第一版：管理员可查看抓取任务、手动触发任务，并查看 `job_runs` 运行记录。
 - 今日前沿抓取闭环第一版：`frontier_fetch` 可生成新闻素材、AI 草稿、待审核内容和审核任务。
 - GitHub 项目周榜抓取闭环第一版：`github_trending_fetch` 可生成 10 个开源项目候选，并保存新的周榜记录。
+- GitHub API 抓取第一版：`github_trending_fetch` 已接入 GitHub Search API，可按主题抓取近期活跃高星项目；网络失败或限流时使用本地候选兜底。
 
 ## 本地启动
 
@@ -44,6 +45,13 @@ cp .env.example .env
 ```
 
 3. 修改 `.env` 中的 `DATABASE_URL`，指向本地 PostgreSQL 数据库。
+
+可选配置：
+
+```env
+GITHUB_TOKEN="你的 GitHub token，可提高 API 限额"
+GITHUB_SEARCH_TOPICS="ai,machine-learning,education,science,game"
+```
 
 4. 生成 Prisma Client：
 
@@ -206,8 +214,9 @@ AI 学习动态化：
 - 新增 `/api/admin/jobs` 和 `/api/admin/jobs/:jobName/run`，支持查看任务目录、最近运行记录和手动触发。
 - 第一版内置 `frontier_fetch` 与 `github_trending_fetch` 两个任务，并写入 `job_runs`。
 - `frontier_fetch` 已接入内容生产闭环：读取启用资讯源，生成 `news_items`、`ai_drafts`、`contents(pending_review)` 和 `review_tasks`。
-- `github_trending_fetch` 已接入开源项目周榜闭环：生成 10 个项目候选，写入 `open_source_projects`，并创建新的 `project_rankings` 与 `project_ranking_items`。
-- 当前后台已支持基础内容管理、审核发布和任务控制；今日前沿与开源项目均已能由后台任务生成候选，后续再接真实 RSS / 网页解析 / GitHub API 抓取。
+- `github_trending_fetch` 已接入 GitHub Search API：按 `GITHUB_SEARCH_TOPICS` 配置的主题搜索近期活跃、高星项目，生成 10 个候选，写入 `open_source_projects`，并创建新的 `project_rankings` 与 `project_ranking_items`。
+- 如果 GitHub API 不可用、限流或结果不足，任务会使用本地候选补齐，保证运营后台仍能生成榜单。
+- 当前后台已支持基础内容管理、审核发布和任务控制；今日前沿与开源项目均已能由后台任务生成候选，后续再接真实 RSS / 网页解析。
 
 本地数据库说明：
 
