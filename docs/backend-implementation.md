@@ -19,6 +19,7 @@
 - 奥林匹克小游戏排行榜第一版：每个游戏可读取 Top 10 成绩，同一用户同一游戏只展示最好成绩。
 - 中小学知识库动态化第一版：知识点列表、详情、视频、任务和学习进度已接入后端。
 - 科学人物动态化第一版：科学人物列表和详情已从后端 `contents` 表读取。
+- 学习活动闭环第一版：首页继续学习区可读取最近学习、继续学习和收藏；内容推荐卡支持收藏和点击行为记录。
 
 ## 本地启动
 
@@ -79,6 +80,10 @@ http://localhost:3001
 | GET | `/api/games/leaderboard` | 小游戏排行榜，支持 `game_slug` 和 `limit` |
 | GET | `/api/home/summary` | 首页运营位摘要，包括主推游戏、今日前沿、推荐卡片和学习概览 |
 | POST | `/api/contact-messages` | 保存联系留言 |
+| GET | `/api/users/me/activity` | 当前登录用户的继续学习、最近学习和收藏内容 |
+| POST | `/api/contents/:id/favorite` | 收藏内容 |
+| DELETE | `/api/contents/:id/favorite` | 取消收藏内容 |
+| POST | `/api/contents/:id/actions` | 记录内容点击、浏览、开始学习等行为 |
 | GET | `/api/frontier/summary` | 今日前沿首页摘要 |
 | GET | `/api/frontier/items` | 今日前沿完整列表，支持 `category`、`grade`、分页 |
 | GET | `/api/frontier/today-news` | 今日前沿当天新闻 |
@@ -157,6 +162,14 @@ AI 学习动态化：
 - `scientists.html` 页面加载后由 `scientists.js` 从后端渲染人物列表，并保留静态兜底。
 - `scientist-detail.html` 页面加载后由 `scientist-detail.js` 从后端渲染人物故事、贡献、讲解、关联知识、思考题和学习启发。
 - `prisma/seed.js` 新增牛顿、爱因斯坦、玛丽·居里、欧几里得、高斯、华罗庚、图灵、麦卡锡、辛顿 9 位人物示例。
+
+学习活动闭环：
+
+- 新增 `/api/users/me/activity`，聚合知识点进度、AI 书籍进度、小游戏成绩、内容点击行为和收藏内容。
+- 新增 `/api/contents/:id/favorite` 收藏、取消收藏接口，写入 `user_favorites`。
+- 新增 `/api/contents/:id/actions` 行为记录接口，写入 `user_content_actions`，为后续推荐和运营看板提供数据。
+- 首页新增“继续学习”区域，登录用户可看到最近学习、继续学习和收藏后的活动反馈。
+- 首页推荐卡新增“收藏”按钮和点击行为记录；未登录用户点击收藏会引导登录。
 
 本地数据库说明：
 

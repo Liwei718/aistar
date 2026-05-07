@@ -2081,6 +2081,7 @@ input[type="range"] {
 .profile-card,
 .profile-popover,
 .recommend-area,
+.activity-box,
 .frontier-box,
 .map-box,
 .extra-grid article {
@@ -2363,6 +2364,13 @@ input[type="range"] {
   color: #5b6680;
 }
 
+.card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 7px;
+}
+
 .lesson-card button {
   min-height: 30px;
   padding: 0 15px;
@@ -2385,6 +2393,12 @@ input[type="range"] {
   font-weight: 900;
 }
 
+.lesson-card .favorite-card {
+  border: 1px solid rgba(36, 87, 255, 0.18);
+  background: #fff;
+  color: #2457ff;
+}
+
 .amber-card button {
   background: linear-gradient(135deg, #ff9b20, #ff7b18);
 }
@@ -2400,6 +2414,7 @@ input[type="range"] {
   margin-top: 14px;
 }
 
+.activity-box,
 .frontier-box,
 .map-box {
   padding: 18px;
@@ -2471,6 +2486,60 @@ input[type="range"] {
 .space-news p,
 .space-news h3 {
   color: #fff;
+}
+
+.activity-list {
+  display: grid;
+  gap: 10px;
+}
+
+.activity-item {
+  display: flex;
+  min-height: 74px;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid rgba(20, 38, 70, 0.08);
+  border-radius: 8px;
+  background: #f8fbff;
+  color: inherit;
+}
+
+.activity-item:hover {
+  border-color: rgba(36, 87, 255, 0.22);
+  background: #f2f6ff;
+}
+
+.activity-item > span {
+  display: inline-grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 8px;
+  background: #10203d;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.activity-item h3 {
+  margin: 0 0 5px;
+  color: #10203d;
+  font-size: 16px;
+}
+
+.activity-item p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.activity-item small {
+  display: inline-flex;
+  margin-top: 7px;
+  color: #315fbd;
+  font-weight: 800;
 }
 
 .frontier-daily {

@@ -28,6 +28,7 @@ const profileXpBar = document.querySelector("#profileXpBar");
 const profileXpText = document.querySelector("#profileXpText");
 const contactForm = document.querySelector("#contactForm");
 const contactMessage = document.querySelector("#contactMessage");
+const activityList = document.querySelector("#activityList");
 const pongCanvas = document.querySelector("#pongCanvas");
 const pongStart = document.querySelector("#pongStart");
 const pongReset = document.querySelector("#pongReset");
@@ -248,8 +249,9 @@ function renderRecommendationCards(items) {
       const difficulty = escapeHtml(difficultyText(item.difficulty));
       const cardClass = cardClasses[index % cardClasses.length];
       const href = escapeHtml(item.href || "./knowledge.html");
+      const contentId = item.id ? ` data-content-id="${escapeHtml(item.id)}"` : "";
 
-      return `<article class="lesson-card ${cardClass}">
+      return `<article class="lesson-card ${cardClass}"${contentId}>
         <div>
           <span>${subject}</span>
           <h3>${title}</h3>
@@ -258,13 +260,108 @@ function renderRecommendationCards(items) {
         <div class="card-visual ${index % 2 === 0 ? "chart-visual" : "laptop-visual"}"></div>
         <footer>
           <small>${difficulty}</small>
-          <a class="card-button" href="${href}">去查看</a>
+          <span class="card-actions">
+            ${item.id ? '<button class="favorite-card" type="button" aria-label="收藏内容">收藏</button>' : ""}
+            <a class="card-button" href="${href}">去查看</a>
+          </span>
         </footer>
       </article>`;
     })
     .join("");
 
   lessonCards = document.querySelectorAll(".lesson-card");
+}
+
+async function recordContentAction(contentId, actionType = "click") {
+  if (!contentId || !localStorage.getItem(AUTH_TOKEN_KEY)) return;
+
+  try {
+    await fetch(`${API_BASE_URL}/api/contents/${contentId}/actions`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({ action_type: actionType })
+    });
+  } catch (error) {
+    console.warn("Content action record failed.", error);
+  }
+}
+
+async function favoriteContent(contentId, button) {
+  if (!contentId) return;
+
+  if (!localStorage.getItem(AUTH_TOKEN_KEY)) {
+    openAuthModal("login");
+    return;
+  }
+
+  try {
+    button.disabled = true;
+    const response = await fetch(`${API_BASE_URL}/api/contents/${contentId}/favorite`, {
+      method: "POST",
+      headers: authHeaders({ "Content-Type": "application/json" })
+    });
+    if (!response.ok) throw new Error("favorite_failed");
+    button.textContent = "已收藏";
+    await refreshUserActivity();
+  } catch (error) {
+    console.warn("Favorite failed.", error);
+    button.textContent = "重试";
+  } finally {
+    button.disabled = false;
+  }
+}
+
+function activityTypeLabel(type) {
+  const labels = {
+    knowledge: "知识",
+    ai_book: "AI",
+    game: "游戏",
+    content_action: "浏览"
+  };
+
+  return labels[type] || "学习";
+}
+
+function formatActivityDate(value) {
+  if (!value) return "刚刚";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "刚刚";
+  return date.toLocaleDateString("zh-CN", { month: "2-digit", day: "2-digit" });
+}
+
+function renderActivitySummary(activity) {
+  if (!activityList) return;
+
+  const continueItems = activity?.continue_learning || [];
+  const recentItems = activity?.recent_learning || [];
+  const favorites = activity?.favorites || [];
+  const items = [...continueItems, ...recentItems].slice(0, 4);
+
+  if (!items.length && !favorites.length) {
+    activityList.innerHTML = `<article class="activity-item">
+      <span>AI</span>
+      <div>
+        <h3>还没有学习记录</h3>
+        <p>读一章 AI 学习、完成一个知识点或玩一局小游戏后，这里会自动更新。</p>
+      </div>
+    </article>`;
+    return;
+  }
+
+  activityList.innerHTML = items.map((item) => {
+    const progress = Number(item.progress_percent || 0);
+    const progressText = progress ? ` · ${progress}%` : "";
+    const href = escapeHtml(item.href || "./knowledge.html");
+
+    return `<a class="activity-item" href="${href}">
+      <span>${escapeHtml(activityTypeLabel(item.type))}</span>
+      <div>
+        <h3>${escapeHtml(item.title || "继续学习")}</h3>
+        <p>${escapeHtml(item.summary || "继续探索这个内容。")}</p>
+        <small>${formatActivityDate(item.occurred_at)}${progressText}</small>
+      </div>
+    </a>`;
+  }).join("");
 }
 
 function updateFeaturedGame(game) {
@@ -368,6 +465,20 @@ async function refreshGrowthSummary() {
   }
 }
 
+async function refreshUserActivity() {
+  if (!localStorage.getItem(AUTH_TOKEN_KEY)) {
+    renderActivitySummary(null);
+    return;
+  }
+
+  try {
+    const payload = await fetchJson("/api/users/me/activity");
+    renderActivitySummary(payload.data || null);
+  } catch (error) {
+    console.warn("Activity refresh failed.", error);
+  }
+}
+
 async function handleLogin(event) {
   event.preventDefault();
   const formData = new FormData(loginForm);
@@ -388,6 +499,7 @@ async function handleLogin(event) {
     saveAuth(result.data.user, result.data.token);
     renderLoggedIn(result.data.user);
     await refreshGrowthSummary();
+    await refreshUserActivity();
     setAuthMessage("登录成功", "success");
     closeAuthModal();
   } catch (error) {
@@ -420,6 +532,7 @@ async function handleRegister(event) {
     saveAuth(result.data.user, result.data.token);
     renderLoggedIn(result.data.user);
     await refreshGrowthSummary();
+    await refreshUserActivity();
     setAuthMessage("注册成功", "success");
     closeAuthModal();
   } catch (error) {
@@ -436,6 +549,7 @@ async function logout() {
   } finally {
     clearAuth();
     renderLoggedOut();
+    renderActivitySummary(null);
   }
 }
 
@@ -714,6 +828,20 @@ switchToRegister?.addEventListener("click", () => switchAuthMode("register"));
 switchToLogin?.addEventListener("click", () => switchAuthMode("login"));
 loginForm?.addEventListener("submit", handleLogin);
 registerForm?.addEventListener("submit", handleRegister);
+recommendCards?.addEventListener("click", (event) => {
+  const favoriteButton = event.target.closest(".favorite-card");
+  if (favoriteButton) {
+    const card = favoriteButton.closest(".lesson-card");
+    favoriteContent(card?.dataset.contentId, favoriteButton);
+    return;
+  }
+
+  const link = event.target.closest(".card-button");
+  if (link) {
+    const card = link.closest(".lesson-card");
+    recordContentAction(card?.dataset.contentId, "click");
+  }
+});
 contactForm?.addEventListener("submit", (event) => {
   event.preventDefault();
   if (!contactMessage) return;
@@ -782,3 +910,4 @@ setupPongGame();
 setupPenaltyGame();
 connectBackend();
 refreshCurrentUser();
+refreshUserActivity();

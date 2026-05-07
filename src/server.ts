@@ -1032,6 +1032,7 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/games/leaderboard", description: "小游戏排行榜，支持 game_slug 和 limit" },
       { method: "GET", path: "/api/home/summary", description: "首页运营位摘要" },
       { method: "GET", path: "/api/users/me/growth", description: "当前用户学习成长汇总" },
+      { method: "GET", path: "/api/users/me/activity", description: "当前用户继续学习、最近学习和收藏" },
       { method: "GET", path: "/api/frontier/summary", description: "今日前沿首页摘要" },
       { method: "GET", path: "/api/frontier/items", description: "今日前沿完整列表" },
       { method: "GET", path: "/api/frontier/today-news", description: "今日前沿当天新闻" },
@@ -1045,6 +1046,9 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/ai/books/:slug", description: "AI 学习书籍详情、章节和任务" },
       { method: "GET", path: "/api/ai/books/:slug/progress", description: "当前用户 AI 书籍阅读进度" },
       { method: "POST", path: "/api/ai/books/:slug/progress", description: "保存当前用户 AI 书籍阅读进度" },
+      { method: "POST", path: "/api/contents/:id/favorite", description: "收藏内容" },
+      { method: "DELETE", path: "/api/contents/:id/favorite", description: "取消收藏内容" },
+      { method: "POST", path: "/api/contents/:id/actions", description: "记录内容点击、浏览等行为" },
       { method: "POST", path: "/api/contact-messages", description: "提交联系留言" },
       { method: "POST", path: "/api/game-records", description: "写入用户游戏记录" },
       { method: "GET", path: "/api/recommendations/:userId", description: "获取用户推荐结果" }
@@ -1227,6 +1231,119 @@ app.get("/api/users/me/growth", async (req, res, next) => {
   }
 });
 
+app.get("/api/users/me/activity", async (req, res, next) => {
+  try {
+    const currentUser = await findCurrentUser(req);
+    if (!currentUser) {
+      res.status(401).json({ error: "unauthorized", message: "登录后才能查看学习记录" });
+      return;
+    }
+
+    const [knowledgeProgress, bookProgress, gameRecords, favorites, contentActions] = await Promise.all([
+      prisma.learningProgress.findMany({
+        where: { user_id: currentUser.id },
+        orderBy: [{ last_activity_at: "desc" }, { updated_at: "desc" }],
+        take: 8,
+        include: { knowledge_point: true }
+      }),
+      prisma.userBookProgress.findMany({
+        where: { user_id: currentUser.id },
+        orderBy: [{ last_read_at: "desc" }, { updated_at: "desc" }],
+        take: 8,
+        include: { book: true, chapter: true }
+      }),
+      prisma.gameRecord.findMany({
+        where: { user_id: currentUser.id, status: "completed" },
+        orderBy: [{ completed_at: "desc" }, { created_at: "desc" }],
+        take: 8,
+        include: { game: true }
+      }),
+      prisma.userFavorite.findMany({
+        where: { user_id: currentUser.id },
+        orderBy: { created_at: "desc" },
+        take: 6,
+        include: { content: true }
+      }),
+      prisma.userContentAction.findMany({
+        where: { user_id: currentUser.id },
+        orderBy: { created_at: "desc" },
+        take: 8,
+        include: { content: true }
+      })
+    ]);
+
+    const knowledgeItems = knowledgeProgress.map((item) => ({
+      type: "knowledge",
+      title: item.knowledge_point.name,
+      summary: item.knowledge_point.plain_explanation,
+      status: item.status,
+      progress_percent: item.progress_percent,
+      href: "./knowledge.html",
+      occurred_at: item.last_activity_at || item.updated_at
+    }));
+
+    const bookItems = bookProgress.map((item) => ({
+      type: "ai_book",
+      title: item.book.title,
+      summary: item.chapter?.title || item.book.subtitle || "继续阅读 AI 学习内容",
+      status: item.status,
+      progress_percent: item.progress_percent,
+      href: "./ai-learning.html",
+      occurred_at: item.last_read_at || item.updated_at
+    }));
+
+    const gameItems = gameRecords.map((item) => ({
+      type: "game",
+      title: item.game.name,
+      summary: `成绩 ${item.score ?? 0}${item.max_score ? `/${item.max_score}` : ""}`,
+      status: item.status,
+      score: item.score,
+      href: "./games.html",
+      occurred_at: item.completed_at || item.created_at
+    }));
+
+    const actionItems = contentActions.map((item) => ({
+      type: "content_action",
+      title: item.content.title,
+      summary: item.content.summary,
+      action_type: item.action_type,
+      href: contentHref(item.content.content_type),
+      occurred_at: item.created_at
+    }));
+
+    const recent_learning = [...knowledgeItems, ...bookItems, ...gameItems, ...actionItems]
+      .sort((left, right) => new Date(right.occurred_at).getTime() - new Date(left.occurred_at).getTime())
+      .slice(0, 8);
+
+    const continue_learning = [...knowledgeItems, ...bookItems]
+      .filter((item) => !["completed", "mastered"].includes(String(item.status)) && Number(item.progress_percent || 0) < 100)
+      .sort((left, right) => Number(right.progress_percent || 0) - Number(left.progress_percent || 0))
+      .slice(0, 3);
+
+    res.json(jsonSafe({
+      data: {
+        continue_learning,
+        recent_learning,
+        favorites: favorites.map((item) => ({
+          id: item.content.id,
+          title: item.content.title,
+          summary: item.content.summary,
+          content_type: item.content.content_type,
+          href: contentHref(item.content.content_type),
+          created_at: item.created_at
+        }))
+      }
+    }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "读取学习记录需要数据库连接。" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
 app.get("/api/home/summary", async (req, res, next) => {
   try {
     const currentUser = await findCurrentUser(req);
@@ -1291,6 +1408,123 @@ app.get("/api/home/summary", async (req, res, next) => {
   } catch (error) {
     if (isDatabaseConnectionError(error)) {
       res.json({ data: demoHomeSummary, mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.post("/api/contents/:id/favorite", async (req, res, next) => {
+  try {
+    const currentUser = await findCurrentUser(req);
+    if (!currentUser) {
+      res.status(401).json({ error: "unauthorized", message: "登录后才能收藏内容" });
+      return;
+    }
+
+    const params = z.object({ id: z.string().uuid() }).parse(req.params);
+    const content = await prisma.content.findFirst({
+      where: { id: params.id, status: "published", deleted_at: null }
+    });
+
+    if (!content) {
+      res.status(404).json({ error: "not_found", message: "未找到可收藏内容" });
+      return;
+    }
+
+    const favorite = await prisma.userFavorite.upsert({
+      where: {
+        user_id_content_id: {
+          user_id: currentUser.id,
+          content_id: content.id
+        }
+      },
+      update: {},
+      create: {
+        user_id: currentUser.id,
+        content_id: content.id
+      }
+    });
+
+    res.status(201).json(jsonSafe({ data: favorite }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "收藏内容需要数据库连接。" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.delete("/api/contents/:id/favorite", async (req, res, next) => {
+  try {
+    const currentUser = await findCurrentUser(req);
+    if (!currentUser) {
+      res.status(401).json({ error: "unauthorized", message: "登录后才能取消收藏" });
+      return;
+    }
+
+    const params = z.object({ id: z.string().uuid() }).parse(req.params);
+    await prisma.userFavorite.deleteMany({
+      where: {
+        user_id: currentUser.id,
+        content_id: params.id
+      }
+    });
+
+    res.json({ ok: true });
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "取消收藏需要数据库连接。" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.post("/api/contents/:id/actions", async (req, res, next) => {
+  try {
+    const currentUser = await findCurrentUser(req);
+    if (!currentUser) {
+      res.status(401).json({ error: "unauthorized", message: "登录后才能记录学习行为" });
+      return;
+    }
+
+    const params = z.object({ id: z.string().uuid() }).parse(req.params);
+    const body = z
+      .object({
+        action_type: z.enum(["view", "click", "start", "complete", "share"]).default("click"),
+        duration_seconds: z.number().int().min(0).optional(),
+        metadata: z.unknown().optional()
+      })
+      .parse(req.body);
+
+    const content = await prisma.content.findFirst({
+      where: { id: params.id, status: "published", deleted_at: null }
+    });
+
+    if (!content) {
+      res.status(404).json({ error: "not_found", message: "未找到内容" });
+      return;
+    }
+
+    const action = await prisma.userContentAction.create({
+      data: {
+        user_id: currentUser.id,
+        content_id: content.id,
+        action_type: body.action_type,
+        duration_seconds: body.duration_seconds,
+        metadata: body.metadata ?? undefined
+      }
+    });
+
+    res.status(201).json(jsonSafe({ data: action }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "记录行为需要数据库连接。" });
       return;
     }
 
