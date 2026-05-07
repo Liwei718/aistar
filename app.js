@@ -246,7 +246,7 @@ function renderRecommendationCards(items) {
       const title = escapeHtml(item.title || item.name || "推荐内容");
       const summary = escapeHtml(item.summary || item.description || item.plain_explanation || "继续探索这个主题。");
       const subject = escapeHtml(subjectLabel(item.subject) || item.category || "推荐");
-      const difficulty = escapeHtml(difficultyText(item.difficulty));
+      const difficulty = escapeHtml(item.recommendation_reason || difficultyText(item.difficulty));
       const cardClass = cardClasses[index % cardClasses.length];
       const href = escapeHtml(item.href || "./knowledge.html");
       const contentId = item.id ? ` data-content-id="${escapeHtml(item.id)}"` : "";

@@ -346,6 +346,113 @@ function contentHref(contentType: string) {
   return hrefs[contentType] ?? "./index.html#recommend";
 }
 
+type HomeRecommendationCandidate = {
+  id: string;
+  content_type: string;
+  title: string;
+  subject: string | null;
+  min_grade: number | null;
+  max_grade: number | null;
+  metadata: unknown;
+  published_at: Date | null;
+  created_at: Date;
+  favorite_count?: bigint | number | null;
+  tags?: Array<{ tag: { slug: string; name: string } }>;
+};
+
+function addSignal(signalMap: Map<string, number>, key: string | null | undefined, weight: number) {
+  if (!key) return;
+  signalMap.set(key, (signalMap.get(key) ?? 0) + weight);
+}
+
+function gradeMatchScore(grade: number | null | undefined, minGrade: number | null, maxGrade: number | null) {
+  if (!grade) return 0.4;
+  if ((minGrade === null || grade >= minGrade) && (maxGrade === null || grade <= maxGrade)) return 2;
+  if (minGrade !== null && grade < minGrade) return Math.max(0, 1 - (minGrade - grade) * 0.35);
+  if (maxGrade !== null && grade > maxGrade) return Math.max(0, 1 - (grade - maxGrade) * 0.35);
+  return 0.4;
+}
+
+async function personalizedHomeRecommendations(
+  user: { id: string; grade: number | null },
+  candidates: HomeRecommendationCandidate[]
+) {
+  const [interests, favorites, actions] = await Promise.all([
+    prisma.userInterest.findMany({
+      where: { user_id: user.id },
+      include: { tag: true }
+    }),
+    prisma.userFavorite.findMany({
+      where: { user_id: user.id },
+      take: 12,
+      orderBy: { created_at: "desc" },
+      include: {
+        content: {
+          include: { tags: { include: { tag: true } } }
+        }
+      }
+    }),
+    prisma.userContentAction.findMany({
+      where: { user_id: user.id },
+      take: 20,
+      orderBy: { created_at: "desc" },
+      include: {
+        content: {
+          include: { tags: { include: { tag: true } } }
+        }
+      }
+    })
+  ]);
+
+  const signals = new Map<string, number>();
+
+  for (const item of interests) {
+    addSignal(signals, item.tag.slug, Number(item.weight) * 1.2);
+  }
+
+  for (const item of favorites) {
+    addSignal(signals, item.content.subject, 1.2);
+    addSignal(signals, categoryOf(metadataOf(item.content.metadata), undefined), 1);
+    for (const tagItem of item.content.tags) addSignal(signals, tagItem.tag.slug, 1);
+  }
+
+  for (const item of actions) {
+    addSignal(signals, item.content.subject, 0.7);
+    addSignal(signals, categoryOf(metadataOf(item.content.metadata), undefined), 0.6);
+    for (const tagItem of item.content.tags) addSignal(signals, tagItem.tag.slug, 0.55);
+  }
+
+  return candidates
+    .map((item) => {
+      const metadata = metadataOf(item.metadata);
+      const tagSlugs = item.tags?.map((tagItem) => tagItem.tag.slug) ?? [];
+      const category = categoryOf(metadata, item.subject || undefined);
+      let score = gradeMatchScore(user.grade, item.min_grade, item.max_grade);
+
+      score += signals.get(item.subject || "") ?? 0;
+      score += signals.get(category) ?? 0;
+      for (const slug of tagSlugs) score += signals.get(slug) ?? 0;
+
+      const publishedAt = item.published_at || item.created_at;
+      const ageDays = Math.max(0, (Date.now() - publishedAt.getTime()) / (24 * 60 * 60 * 1000));
+      score += Math.max(0, 1.2 - ageDays * 0.03);
+      score += Math.min(0.8, Number(item.favorite_count ?? 0) * 0.08);
+
+      const reasons = [];
+      if (user.grade && gradeMatchScore(user.grade, item.min_grade, item.max_grade) >= 2) reasons.push("年级匹配");
+      if ((item.subject && signals.has(item.subject)) || signals.has(category) || tagSlugs.some((slug) => signals.has(slug))) reasons.push("贴合你的兴趣和浏览记录");
+      if (ageDays < 14) reasons.push("近期更新");
+
+      return {
+        ...item,
+        recommendation_score: Number(score.toFixed(3)),
+        recommendation_reason: reasons.length ? reasons.join(" · ") : "适合继续探索"
+      };
+    })
+    .sort((left, right) => right.recommendation_score - left.recommendation_score)
+    .slice(0, 4);
+}
+
 function metadataOf(value: unknown) {
   return value && typeof value === "object" ? value as Record<string, unknown> : {};
 }
@@ -1348,7 +1455,7 @@ app.get("/api/home/summary", async (req, res, next) => {
   try {
     const currentUser = await findCurrentUser(req);
 
-    const [frontierContents, recommendations, featuredGame, growth] = await Promise.all([
+    const [frontierContents, recommendationCandidates, featuredGame, growth] = await Promise.all([
       prisma.content.findMany({
         where: {
           status: "published",
@@ -1367,7 +1474,10 @@ app.get("/api/home/summary", async (req, res, next) => {
           deleted_at: null
         },
         orderBy: [{ published_at: "desc" }, { created_at: "desc" }],
-        take: 4
+        take: 24,
+        include: {
+          tags: { include: { tag: true } }
+        }
       }),
       prisma.game.findFirst({
         where: {
@@ -1382,6 +1492,10 @@ app.get("/api/home/summary", async (req, res, next) => {
       }),
       currentUser ? growthSummaryForUser(currentUser.id) : Promise.resolve(null)
     ]);
+
+    const recommendations = currentUser
+      ? await personalizedHomeRecommendations(currentUser, recommendationCandidates)
+      : recommendationCandidates.slice(0, 4);
 
     const frontierSummary = frontierContents.length
       ? frontierContents.map((item) => ({
