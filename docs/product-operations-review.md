@@ -22,7 +22,7 @@
 | 注册 / 登录 / 退出 | 首页弹窗 | `/api/auth/register`、`/api/auth/login`、`/api/auth/me`、`/api/auth/logout` | 已接入 | 可支持用户体系起步，但 session 存在内存中，重启后失效，不适合正式运营 |
 | 用户资料浮窗 | 首页右上角 | `/api/auth/me` | 局部接入 | 当前只展示注册信息和静态标签，尚未接入真实兴趣、学习行为和徽章 |
 | 今日前沿 | `frontier.html` + `frontier.js` | `/api/frontier/summary`、`/api/frontier/items`、`/api/frontier/today-news`、`/api/frontier/items/:id`、后台 `frontier_fetch` 任务 | 已完成动态化和抓取审核闭环第一版 | 已能从后端读取列表，并可由后台任务生成 AI 草稿和待审核内容，下一步接真实 RSS / 网页解析 |
-| 开源项目 | `projects.html` + `projects.js` | `/api/projects/rankings/current`、`/api/projects/rankings`、`/api/projects/:id` | 已完成动态化第一版 | 已能读取当前周榜、历史榜单和项目详情，下一步接 GitHub 自动抓取 |
+| 开源项目 | `projects.html` + `projects.js` | `/api/projects/rankings/current`、`/api/projects/rankings`、`/api/projects/:id`、后台 `github_trending_fetch` 任务 | 已完成动态化和周榜生成第一版 | 已能读取当前周榜、历史榜单和项目详情，并可由后台任务生成 10 个项目候选，下一步接真实 GitHub API |
 | 中小学知识 | `knowledge.html` + `knowledge.js` | `/api/knowledge-points`、`/api/knowledge-points/:id`、`/api/knowledge-points/:id/progress` | 已完成动态化第一版 | 已有详情、视频、任务和学习进度，下一步扩充题库和真实视频源 |
 | AI 学习 | `ai-learning.html` | 已接入书籍、章节、任务和阅读进度接口 | 静态 PDF + 导读 + 进度 | 适合做首个高质量内容产品，后续可扩展更多书籍和徽章 |
 | Hermes 对话 | `hermes.html` + `hermes.js` | `/api/hermes/status`、`/api/hermes/chat` | 已接入 | 本机能力已跑通，可作为特色功能，但需要安全边界和使用提示 |
@@ -251,7 +251,7 @@ AI 生成介绍、学习价值、改造任务
 - 已完成第一版：今日前沿接入动态接口，前端页面读取后端摘要、列表和当天新闻。
 - 已完成第一版：今日前沿接入后台任务控制，运行 `frontier_fetch` 后可生成新闻素材、AI 草稿、待审核内容和审核任务。
 - 已完成第一版：开源项目接入动态接口、周榜和历史榜单。
-- 待继续：开源项目接入 GitHub 自动抓取、AI 改写和人工审核流程。
+- 已完成第一版：开源项目接入后台 `github_trending_fetch` 任务，可生成 10 个项目候选并保存新的历史周榜。
 - 已完成第一版：AI 学习接入书籍、章节、阅读任务和阅读进度。
 - 已完成第一版：小游戏写入真实成绩，接入用户成长体系。
 - 已完成第一版：用户浮窗展示真实学习天数、连续学习、徽章、知识点数量。

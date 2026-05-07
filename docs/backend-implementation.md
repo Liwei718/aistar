@@ -27,6 +27,7 @@
 - 后台审核发布第一版：管理员可在待审核队列中通过或退回任务，通过内容审核时自动发布内容。
 - 后台自动化任务控制第一版：管理员可查看抓取任务、手动触发任务，并查看 `job_runs` 运行记录。
 - 今日前沿抓取闭环第一版：`frontier_fetch` 可生成新闻素材、AI 草稿、待审核内容和审核任务。
+- GitHub 项目周榜抓取闭环第一版：`github_trending_fetch` 可生成 10 个开源项目候选，并保存新的周榜记录。
 
 ## 本地启动
 
@@ -205,7 +206,8 @@ AI 学习动态化：
 - 新增 `/api/admin/jobs` 和 `/api/admin/jobs/:jobName/run`，支持查看任务目录、最近运行记录和手动触发。
 - 第一版内置 `frontier_fetch` 与 `github_trending_fetch` 两个任务，并写入 `job_runs`。
 - `frontier_fetch` 已接入内容生产闭环：读取启用资讯源，生成 `news_items`、`ai_drafts`、`contents(pending_review)` 和 `review_tasks`。
-- 当前后台已支持基础内容管理、审核发布和任务控制；今日前沿已能进入审核队列，后续再接真实 RSS / 网页解析 / API 抓取。
+- `github_trending_fetch` 已接入开源项目周榜闭环：生成 10 个项目候选，写入 `open_source_projects`，并创建新的 `project_rankings` 与 `project_ranking_items`。
+- 当前后台已支持基础内容管理、审核发布和任务控制；今日前沿与开源项目均已能由后台任务生成候选，后续再接真实 RSS / 网页解析 / GitHub API 抓取。
 
 本地数据库说明：
 
