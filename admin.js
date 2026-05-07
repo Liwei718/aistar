@@ -18,6 +18,9 @@ const adminContentList = document.querySelector("#adminContentList");
 const adminContentMessage = document.querySelector("#adminContentMessage");
 const contentStatusFilter = document.querySelector("#contentStatusFilter");
 const reloadContents = document.querySelector("#reloadContents");
+const adminJobGrid = document.querySelector("#adminJobGrid");
+const adminJobRuns = document.querySelector("#adminJobRuns");
+const reloadJobs = document.querySelector("#reloadJobs");
 
 function adminAuthHeaders(extra = {}) {
   const token = localStorage.getItem(ADMIN_TOKEN_KEY);
@@ -92,6 +95,16 @@ function statusLabel(status) {
   };
 
   return labels[status] || status || "未知";
+}
+
+function jobStatusLabel(status) {
+  const labels = {
+    running: "运行中",
+    success: "成功",
+    failed: "失败"
+  };
+
+  return labels[status] || status || "未运行";
 }
 
 function setAdminContentMessage(message, type = "") {
@@ -271,6 +284,75 @@ async function updateAdminContent(form) {
   }
 }
 
+function renderAdminJobs(payload) {
+  if (adminJobGrid) {
+    const jobs = payload?.jobs || [];
+    adminJobGrid.innerHTML = jobs.length
+      ? jobs.map((job) => `
+        <article class="admin-job-card">
+          <div>
+            <b>${escapeAdminHtml(job.title)}</b>
+            <p>${escapeAdminHtml(job.description)}</p>
+            <small>${escapeAdminHtml(job.cadence)} · ${escapeAdminHtml(jobStatusLabel(job.last_run?.status))}</small>
+          </div>
+          <button type="button" data-job-run="${escapeAdminHtml(job.job_name)}">运行</button>
+        </article>
+      `).join("")
+      : '<div class="admin-empty">暂无自动化任务。</div>';
+  }
+
+  if (adminJobRuns) {
+    const runs = payload?.recent_runs || [];
+    renderList(adminJobRuns, runs, "暂无运行记录", (run) => `
+      <div class="admin-list-row">
+        <div>
+          <b>${escapeAdminHtml(run.job_name)}</b>
+          <small>${formatAdminDate(run.started_at)} · ${escapeAdminHtml(run.message || "无消息")}</small>
+        </div>
+        <span>${escapeAdminHtml(jobStatusLabel(run.status))}</span>
+      </div>
+    `);
+  }
+}
+
+async function loadAdminJobs() {
+  if (!adminJobGrid && !adminJobRuns) return;
+
+  try {
+    if (adminJobGrid) adminJobGrid.innerHTML = '<div class="admin-empty">正在读取任务...</div>';
+    const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/jobs`, {
+      headers: adminAuthHeaders()
+    });
+    if (response.status === 401) {
+      showAdminLogin();
+      return;
+    }
+    if (!response.ok) throw new Error("jobs_unavailable");
+    const payload = await response.json();
+    renderAdminJobs(payload.data || {});
+  } catch (error) {
+    console.warn("Admin jobs failed.", error);
+    if (adminJobGrid) adminJobGrid.innerHTML = '<div class="admin-empty">任务读取失败，请确认后端已启动。</div>';
+  }
+}
+
+async function runAdminJob(jobName) {
+  if (!jobName) return;
+
+  try {
+    if (adminStatus) adminStatus.textContent = "正在运行后台任务";
+    const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/jobs/${encodeURIComponent(jobName)}/run`, {
+      method: "POST",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "任务运行失败");
+    await Promise.all([loadAdminJobs(), loadAdminDashboard()]);
+  } catch (error) {
+    if (adminStatus) adminStatus.textContent = error.message || "任务运行失败";
+  }
+}
+
 async function decideReviewTask(reviewId, decision) {
   if (!reviewId || !decision) return;
 
@@ -286,7 +368,7 @@ async function decideReviewTask(reviewId, decision) {
     });
     const result = await response.json();
     if (!response.ok) throw new Error(result.message || "审核处理失败");
-    await Promise.all([loadAdminDashboard(), loadAdminContents()]);
+    await Promise.all([loadAdminDashboard(), loadAdminContents(), loadAdminJobs()]);
   } catch (error) {
     if (adminStatus) adminStatus.textContent = error.message || "审核处理失败";
   }
@@ -342,7 +424,7 @@ async function refreshAdmin() {
 
     localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(payload.data));
     showAdminDashboard(payload.data);
-    await Promise.all([loadAdminDashboard(), loadAdminContents()]);
+    await Promise.all([loadAdminDashboard(), loadAdminContents(), loadAdminJobs()]);
   } catch (error) {
     console.warn("Admin auth refresh failed.", error);
     showAdminLogin();
@@ -404,5 +486,11 @@ reviewQueue?.addEventListener("click", (event) => {
 
 contentStatusFilter?.addEventListener("change", loadAdminContents);
 reloadContents?.addEventListener("click", loadAdminContents);
+reloadJobs?.addEventListener("click", loadAdminJobs);
+adminJobGrid?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-job-run]");
+  if (!button) return;
+  runAdminJob(button.dataset.jobRun);
+});
 
 refreshAdmin();

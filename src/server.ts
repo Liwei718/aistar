@@ -367,6 +367,23 @@ type HomeRecommendationCandidate = {
   tags?: Array<{ tag: { slug: string; name: string } }>;
 };
 
+const adminJobCatalog = [
+  {
+    job_name: "frontier_fetch",
+    job_type: "content_ingestion",
+    title: "今日前沿抓取",
+    description: "从配置的前沿资讯源读取内容，生成待审核素材。",
+    cadence: "每 2 小时"
+  },
+  {
+    job_name: "github_trending_fetch",
+    job_type: "project_ingestion",
+    title: "GitHub 项目周榜抓取",
+    description: "读取 GitHub 增长项目，保存周榜候选。",
+    cadence: "每周"
+  }
+];
+
 function addSignal(signalMap: Map<string, number>, key: string | null | undefined, weight: number) {
   if (!key) return;
   signalMap.set(key, (signalMap.get(key) ?? 0) + weight);
@@ -1112,6 +1129,75 @@ async function requireAdmin(req: express.Request, res: express.Response) {
   return admin;
 }
 
+async function runAdminJob(jobName: string, adminId: string) {
+  const job = adminJobCatalog.find((item) => item.job_name === jobName);
+  if (!job) return null;
+
+  const startedAt = new Date();
+  const running = await prisma.jobRun.create({
+    data: {
+      job_name: job.job_name,
+      job_type: job.job_type,
+      status: "running",
+      started_at: startedAt,
+      message: "任务已由后台手动触发。",
+      metadata: { triggered_by: adminId, mode: "manual" }
+    }
+  });
+
+  try {
+    let successCount = 0;
+    let message = "";
+
+    if (job.job_name === "frontier_fetch") {
+      const sources = await prisma.newsSource.findMany({
+        where: { enabled: true },
+        take: 20
+      });
+      await prisma.newsSource.updateMany({
+        where: { enabled: true },
+        data: {
+          last_fetched_at: new Date(),
+          last_fetch_status: "simulated",
+          last_fetch_message: "后台任务控制第一版已记录触发，真实抓取将在下一步接入。"
+        }
+      });
+      successCount = sources.length;
+      message = `已检查 ${sources.length} 个启用资讯源。`;
+    } else if (job.job_name === "github_trending_fetch") {
+      const projects = await prisma.openSourceProject.count({
+        where: { status: "published" }
+      });
+      successCount = projects;
+      message = `已检查 ${projects} 个已发布开源项目。`;
+    }
+
+    const finishedAt = new Date();
+    return prisma.jobRun.update({
+      where: { id: running.id },
+      data: {
+        status: "success",
+        finished_at: finishedAt,
+        duration_ms: finishedAt.getTime() - startedAt.getTime(),
+        success_count: successCount,
+        message
+      }
+    });
+  } catch (error) {
+    const finishedAt = new Date();
+    return prisma.jobRun.update({
+      where: { id: running.id },
+      data: {
+        status: "failed",
+        finished_at: finishedAt,
+        duration_ms: finishedAt.getTime() - startedAt.getTime(),
+        failure_count: 1,
+        message: error instanceof Error ? error.message : "任务运行失败"
+      }
+    });
+  }
+}
+
 async function issueSession(req: express.Request, userId: string) {
   const token = createToken();
 
@@ -1230,6 +1316,8 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/admin/contents", description: "后台内容列表" },
       { method: "PATCH", path: "/api/admin/contents/:id", description: "后台更新内容标题、摘要和状态" },
       { method: "POST", path: "/api/admin/review-tasks/:id/decision", description: "后台审核通过或退回任务" },
+      { method: "GET", path: "/api/admin/jobs", description: "后台自动化任务列表和运行记录" },
+      { method: "POST", path: "/api/admin/jobs/:jobName/run", description: "手动触发后台自动化任务" },
       { method: "GET", path: "/api/frontier/summary", description: "今日前沿首页摘要" },
       { method: "GET", path: "/api/frontier/items", description: "今日前沿完整列表" },
       { method: "GET", path: "/api/frontier/today-news", description: "今日前沿当天新闻" },
@@ -2017,6 +2105,61 @@ app.post("/api/admin/review-tasks/:id/decision", async (req, res, next) => {
   } catch (error) {
     if (isDatabaseConnectionError(error)) {
       res.status(503).json({ error: "database_unavailable", message: "处理审核任务需要数据库连接。" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/admin/jobs", async (req, res, next) => {
+  try {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+
+    const runs = await prisma.jobRun.findMany({
+      orderBy: { started_at: "desc" },
+      take: 20
+    });
+
+    const data = adminJobCatalog.map((job) => ({
+      ...job,
+      last_run: runs.find((run) => run.job_name === job.job_name) || null
+    }));
+
+    res.json(jsonSafe({
+      data: {
+        jobs: data,
+        recent_runs: runs
+      }
+    }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "读取后台任务需要数据库连接。" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.post("/api/admin/jobs/:jobName/run", async (req, res, next) => {
+  try {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+
+    const params = z.object({ jobName: z.string().max(120) }).parse(req.params);
+    const result = await runAdminJob(params.jobName, admin.id);
+
+    if (!result) {
+      res.status(404).json({ error: "not_found", message: "未找到后台任务" });
+      return;
+    }
+
+    res.status(201).json(jsonSafe({ data: result }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "运行后台任务需要数据库连接。" });
       return;
     }
 

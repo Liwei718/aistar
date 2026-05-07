@@ -25,6 +25,7 @@
 - 管理员登录第一版：运营看板已接入管理员登录保护，未登录不能读取后台指标。
 - 后台内容管理第一版：管理员可查看内容列表，按状态筛选，并编辑标题、摘要和发布状态。
 - 后台审核发布第一版：管理员可在待审核队列中通过或退回任务，通过内容审核时自动发布内容。
+- 后台自动化任务控制第一版：管理员可查看抓取任务、手动触发任务，并查看 `job_runs` 运行记录。
 
 ## 本地启动
 
@@ -96,6 +97,8 @@ http://localhost:3001
 | GET | `/api/admin/contents` | 后台内容列表，支持 `status`、`content_type`、分页 |
 | PATCH | `/api/admin/contents/:id` | 后台更新内容标题、摘要和发布状态 |
 | POST | `/api/admin/review-tasks/:id/decision` | 后台审核通过、退回或拒绝任务 |
+| GET | `/api/admin/jobs` | 后台自动化任务列表和最近运行记录 |
+| POST | `/api/admin/jobs/:jobName/run` | 手动触发后台自动化任务 |
 | GET | `/api/frontier/summary` | 今日前沿首页摘要 |
 | GET | `/api/frontier/items` | 今日前沿完整列表，支持 `category`、`grade`、分页 |
 | GET | `/api/frontier/today-news` | 今日前沿当天新闻 |
@@ -198,7 +201,9 @@ AI 学习动态化：
 - 新增 `/api/admin/contents` 和 `/api/admin/contents/:id`，管理员可在后台按状态查看内容，并编辑标题、摘要和发布状态。
 - 新增 `/api/admin/review-tasks/:id/decision`，管理员可对待审核任务执行通过、退回或拒绝。
 - 内容审核通过时，后端会同步把目标内容发布；退回时同步退回草稿；拒绝时同步标记为拒绝。
-- 当前后台已支持基础内容管理和审核发布，后续再接自动抓取任务控制。
+- 新增 `/api/admin/jobs` 和 `/api/admin/jobs/:jobName/run`，支持查看任务目录、最近运行记录和手动触发。
+- 第一版内置 `frontier_fetch` 与 `github_trending_fetch` 两个任务，先写入 `job_runs` 并记录模拟运行结果；后续将真实抓取逻辑接入对应任务。
+- 当前后台已支持基础内容管理、审核发布和任务控制，后续再接真实自动抓取。
 
 本地数据库说明：
 
