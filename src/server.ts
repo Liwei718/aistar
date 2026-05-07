@@ -1140,6 +1140,7 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/home/summary", description: "首页运营位摘要" },
       { method: "GET", path: "/api/users/me/growth", description: "当前用户学习成长汇总" },
       { method: "GET", path: "/api/users/me/activity", description: "当前用户继续学习、最近学习和收藏" },
+      { method: "GET", path: "/api/admin/dashboard", description: "运营后台首页看板数据" },
       { method: "GET", path: "/api/frontier/summary", description: "今日前沿首页摘要" },
       { method: "GET", path: "/api/frontier/items", description: "今日前沿完整列表" },
       { method: "GET", path: "/api/frontier/today-news", description: "今日前沿当天新闻" },
@@ -1522,6 +1523,148 @@ app.get("/api/home/summary", async (req, res, next) => {
   } catch (error) {
     if (isDatabaseConnectionError(error)) {
       res.json({ data: demoHomeSummary, mode: "demo", warning: "database_unavailable" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/admin/dashboard", async (_req, res, next) => {
+  try {
+    const since7Days = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+    const [
+      totalUsers,
+      newUsers7d,
+      publishedContents,
+      knowledgePoints,
+      completedProgress,
+      gameCompletions,
+      favorites,
+      contentClicks,
+      pendingReviews,
+      generatedDrafts,
+      contentTypeGroups,
+      topContents,
+      recentActions,
+      recentGames,
+      reviewQueue
+    ] = await Promise.all([
+      prisma.user.count({ where: { status: "active" } }),
+      prisma.user.count({ where: { status: "active", created_at: { gte: since7Days } } }),
+      prisma.content.count({ where: { status: "published", deleted_at: null } }),
+      prisma.knowledgePoint.count({ where: { status: "published", deleted_at: null } }),
+      prisma.learningProgress.count({ where: { status: { in: ["completed", "mastered"] } } }),
+      prisma.gameRecord.count({ where: { status: "completed" } }),
+      prisma.userFavorite.count(),
+      prisma.userContentAction.count({ where: { action_type: "click" } }),
+      prisma.reviewTask.count({ where: { status: "pending" } }),
+      prisma.aiDraft.count({ where: { status: "generated" } }),
+      prisma.content.groupBy({
+        by: ["content_type"],
+        where: { status: "published", deleted_at: null },
+        _count: { _all: true },
+        orderBy: { _count: { content_type: "desc" } }
+      }),
+      prisma.content.findMany({
+        where: { status: "published", deleted_at: null },
+        orderBy: [{ favorite_count: "desc" }, { view_count: "desc" }, { published_at: "desc" }],
+        take: 6,
+        select: {
+          id: true,
+          title: true,
+          content_type: true,
+          view_count: true,
+          favorite_count: true,
+          published_at: true
+        }
+      }),
+      prisma.userContentAction.findMany({
+        orderBy: { created_at: "desc" },
+        take: 8,
+        include: {
+          user: { select: { nickname: true, grade: true } },
+          content: { select: { title: true, content_type: true } }
+        }
+      }),
+      prisma.gameRecord.findMany({
+        where: { status: "completed" },
+        orderBy: [{ completed_at: "desc" }, { created_at: "desc" }],
+        take: 6,
+        include: {
+          user: { select: { nickname: true, grade: true } },
+          game: { select: { name: true, slug: true } }
+        }
+      }),
+      prisma.reviewTask.findMany({
+        where: { status: "pending" },
+        orderBy: [{ priority: "desc" }, { submitted_at: "asc" }],
+        take: 6
+      })
+    ]);
+
+    res.json(jsonSafe({
+      data: {
+        metrics: {
+          total_users: totalUsers,
+          new_users_7d: newUsers7d,
+          published_contents: publishedContents,
+          knowledge_points: knowledgePoints,
+          completed_progress: completedProgress,
+          game_completions: gameCompletions,
+          favorites,
+          content_clicks: contentClicks,
+          pending_reviews: pendingReviews,
+          generated_drafts: generatedDrafts
+        },
+        content_types: contentTypeGroups.map((item) => ({
+          content_type: item.content_type,
+          count: item._count._all
+        })),
+        top_contents: topContents,
+        recent_actions: recentActions.map((item) => ({
+          id: item.id,
+          action_type: item.action_type,
+          user: item.user,
+          content: item.content,
+          created_at: item.created_at
+        })),
+        recent_games: recentGames.map((item) => ({
+          id: item.id,
+          user: item.user,
+          game: item.game,
+          score: item.score,
+          max_score: item.max_score,
+          completed_at: item.completed_at || item.created_at
+        })),
+        review_queue: reviewQueue
+      }
+    }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.json({
+        data: {
+          metrics: {
+            total_users: 0,
+            new_users_7d: 0,
+            published_contents: 0,
+            knowledge_points: 0,
+            completed_progress: 0,
+            game_completions: 0,
+            favorites: 0,
+            content_clicks: 0,
+            pending_reviews: 0,
+            generated_drafts: 0
+          },
+          content_types: [],
+          top_contents: [],
+          recent_actions: [],
+          recent_games: [],
+          review_queue: []
+        },
+        mode: "demo",
+        warning: "database_unavailable"
+      });
       return;
     }
 

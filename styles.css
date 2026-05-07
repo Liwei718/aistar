@@ -1574,6 +1574,153 @@ input[type="range"] {
   text-align: center;
 }
 
+.admin-page {
+  padding: 26px 0 44px;
+}
+
+.admin-hero {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 14px;
+  padding: 22px;
+  border: 1px solid rgba(16, 32, 61, 0.1);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 14px 34px rgba(17, 31, 58, 0.08);
+}
+
+.admin-hero p,
+.admin-panel-head span {
+  color: #315fbd;
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-hero h1 {
+  margin: 4px 0 0;
+  color: #10203d;
+  font-size: 34px;
+}
+
+.admin-hero > span {
+  display: inline-flex;
+  min-height: 34px;
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: #eef4ff;
+  color: #315fbd;
+  font-weight: 850;
+}
+
+.admin-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.admin-metric-card,
+.admin-panel {
+  border: 1px solid rgba(16, 32, 61, 0.1);
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 12px 28px rgba(17, 31, 58, 0.07);
+}
+
+.admin-metric-card {
+  padding: 14px;
+}
+
+.admin-metric-card span {
+  display: block;
+  margin-bottom: 8px;
+  color: #6c788d;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.admin-metric-card strong {
+  color: #10203d;
+  font-size: 28px;
+  line-height: 1;
+}
+
+.admin-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.admin-panel {
+  padding: 16px;
+}
+
+.admin-panel-wide {
+  grid-column: 1 / -1;
+}
+
+.admin-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.admin-panel-head h2 {
+  margin: 0;
+  color: #10203d;
+  font-size: 20px;
+}
+
+.admin-list {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-list-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  min-height: 52px;
+  padding: 10px 12px;
+  border: 1px solid rgba(16, 32, 61, 0.08);
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.admin-list-row b {
+  display: block;
+  color: #10203d;
+  font-size: 14px;
+}
+
+.admin-list-row small {
+  display: block;
+  margin-top: 4px;
+  color: #6c788d;
+}
+
+.admin-list-row > span {
+  flex: 0 0 auto;
+  color: #315fbd;
+  font-weight: 900;
+}
+
+.admin-empty {
+  padding: 18px;
+  border: 1px dashed rgba(16, 32, 61, 0.16);
+  border-radius: 8px;
+  color: #6c788d;
+  text-align: center;
+}
+
 .pong-game {
   margin-top: 74px;
   padding: 14px;
@@ -4616,6 +4763,8 @@ input[type="range"] {
   .project-top-list,
   .olympic-games-grid,
   .leaderboard-row,
+  .admin-metrics,
+  .admin-grid,
   .book-shelf,
   .knowledge-daily,
   .knowledge-map,
@@ -4799,6 +4948,8 @@ input[type="range"] {
   .frontier-list,
   .olympic-games-grid,
   .leaderboard-row,
+  .admin-metrics,
+  .admin-grid,
   .book-shelf,
   .guide-grid,
   .mini-games-grid,
@@ -4820,6 +4971,10 @@ input[type="range"] {
   }
 
   .leaderboard-head {
+    display: grid;
+  }
+
+  .admin-hero {
     display: grid;
   }
 

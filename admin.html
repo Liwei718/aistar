@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>运营看板 · 星火 AI 科学馆</title>
+    <link rel="stylesheet" href="./styles.css?v=20260507a" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./index.html#home" aria-label="星火 AI 科学馆首页">
+        <span class="brand-star">✦</span>
+        <span>星火 AI 科学馆</span>
+      </a>
+      <nav class="main-nav" aria-label="主导航">
+        <a href="./index.html#home">首页</a>
+        <a href="./ai-learning.html">AI 学习</a>
+        <a href="./frontier.html">今日前沿</a>
+        <a href="./projects.html">开源项目</a>
+        <a href="./knowledge.html">中小学知识</a>
+        <a href="./games.html">奥林匹克小游戏</a>
+        <a href="./scientists.html">科学人物</a>
+        <a class="active" href="./admin.html">运营看板</a>
+      </nav>
+      <div class="header-actions">
+        <a class="home-button" href="./index.html#home">返回首页</a>
+      </div>
+    </header>
+
+    <main class="page-shell admin-page">
+      <section class="admin-hero" aria-labelledby="admin-title">
+        <div>
+          <p>运营后台</p>
+          <h1 id="admin-title">星火 AI 科学馆运营看板</h1>
+        </div>
+        <span id="adminStatus">连接后端中</span>
+      </section>
+
+      <section class="admin-metrics" id="adminMetrics" aria-label="核心指标"></section>
+
+      <section class="admin-grid">
+        <article class="admin-panel">
+          <div class="admin-panel-head">
+            <h2>内容结构</h2>
+            <span>已发布</span>
+          </div>
+          <div class="admin-list" id="contentTypes"></div>
+        </article>
+
+        <article class="admin-panel">
+          <div class="admin-panel-head">
+            <h2>热门内容</h2>
+            <span>收藏 / 浏览</span>
+          </div>
+          <div class="admin-list" id="topContents"></div>
+        </article>
+
+        <article class="admin-panel">
+          <div class="admin-panel-head">
+            <h2>最近学习行为</h2>
+            <span>点击</span>
+          </div>
+          <div class="admin-list" id="recentActions"></div>
+        </article>
+
+        <article class="admin-panel">
+          <div class="admin-panel-head">
+            <h2>小游戏成绩</h2>
+            <span>最近完成</span>
+          </div>
+          <div class="admin-list" id="recentGames"></div>
+        </article>
+
+        <article class="admin-panel admin-panel-wide">
+          <div class="admin-panel-head">
+            <h2>待审核队列</h2>
+            <span>人工确认</span>
+          </div>
+          <div class="admin-list" id="reviewQueue"></div>
+        </article>
+      </section>
+    </main>
+
+    <script src="./admin.js?v=20260507a"></script>
+  </body>
+</html>
