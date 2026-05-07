@@ -21,6 +21,13 @@ const allowedOrigins = process.env.FRONTEND_ORIGIN?.split(",").map((origin) => o
   "http://127.0.0.1:3000",
   "http://127.0.0.1:3002"
 ];
+const adminTokenTtlHours = Number(process.env.ADMIN_TOKEN_TTL_HOURS ?? 12);
+const adminSessions = new Map<string, {
+  adminId: string;
+  tokenHash: string;
+  expiresAt: Date;
+  lastSeenAt: Date;
+}>();
 
 app.use(helmet());
 app.use(
@@ -1029,6 +1036,82 @@ async function findCurrentUser(req: express.Request) {
   return session.user;
 }
 
+function adminExpiresAt() {
+  return new Date(Date.now() + adminTokenTtlHours * 60 * 60 * 1000);
+}
+
+async function ensureDefaultAdmin() {
+  const email = process.env.ADMIN_EMAIL ?? "admin@aistar.local";
+  const password = process.env.ADMIN_PASSWORD ?? "admin123456";
+  const name = process.env.ADMIN_NAME ?? "星火运营员";
+
+  return prisma.adminUser.upsert({
+    where: { email },
+    update: {
+      name,
+      role: "owner",
+      status: "active"
+    },
+    create: {
+      email,
+      password_hash: hashPassword(password),
+      name,
+      role: "owner",
+      status: "active"
+    }
+  });
+}
+
+async function issueAdminSession(adminId: string) {
+  const token = createToken();
+  const now = new Date();
+  adminSessions.set(hashToken(token), {
+    adminId,
+    tokenHash: hashToken(token),
+    expiresAt: adminExpiresAt(),
+    lastSeenAt: now
+  });
+
+  return token;
+}
+
+async function findCurrentAdmin(req: express.Request) {
+  const token = getTokenFromHeader(req);
+  if (!token) return null;
+
+  const tokenHash = hashToken(token);
+  const session = adminSessions.get(tokenHash);
+  if (!session || session.expiresAt <= new Date()) {
+    adminSessions.delete(tokenHash);
+    return null;
+  }
+
+  const admin = await prisma.adminUser.findFirst({
+    where: {
+      id: session.adminId,
+      status: "active"
+    }
+  });
+
+  if (!admin) {
+    adminSessions.delete(tokenHash);
+    return null;
+  }
+
+  session.lastSeenAt = new Date();
+  return admin;
+}
+
+async function requireAdmin(req: express.Request, res: express.Response) {
+  const admin = await findCurrentAdmin(req);
+  if (!admin) {
+    res.status(401).json({ error: "admin_unauthorized", message: "需要管理员登录后访问运营后台" });
+    return null;
+  }
+
+  return admin;
+}
+
 async function issueSession(req: express.Request, userId: string) {
   const token = createToken();
 
@@ -1140,6 +1223,9 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/home/summary", description: "首页运营位摘要" },
       { method: "GET", path: "/api/users/me/growth", description: "当前用户学习成长汇总" },
       { method: "GET", path: "/api/users/me/activity", description: "当前用户继续学习、最近学习和收藏" },
+      { method: "POST", path: "/api/admin/auth/login", description: "管理员登录" },
+      { method: "GET", path: "/api/admin/auth/me", description: "当前管理员信息" },
+      { method: "POST", path: "/api/admin/auth/logout", description: "管理员退出" },
       { method: "GET", path: "/api/admin/dashboard", description: "运营后台首页看板数据" },
       { method: "GET", path: "/api/frontier/summary", description: "今日前沿首页摘要" },
       { method: "GET", path: "/api/frontier/items", description: "今日前沿完整列表" },
@@ -1317,6 +1403,89 @@ app.post("/api/auth/login", async (req, res, next) => {
 
 app.post("/api/auth/logout", async (req, res) => {
   await revokeSession(req);
+  res.json({ ok: true });
+});
+
+app.post("/api/admin/auth/login", async (req, res, next) => {
+  try {
+    const body = z
+      .object({
+        email: z.string().email().max(255),
+        password: z.string().min(6).max(64)
+      })
+      .parse(req.body);
+
+    await ensureDefaultAdmin();
+    const admin = await prisma.adminUser.findFirst({
+      where: {
+        email: body.email,
+        status: "active"
+      }
+    });
+
+    if (!admin?.password_hash) {
+      res.status(401).json({ error: "invalid_credentials", message: "管理员账号或密码错误" });
+      return;
+    }
+
+    const hashedInput = hashPassword(body.password);
+    const sameLength = admin.password_hash.length === hashedInput.length;
+    const passwordOk =
+      sameLength && timingSafeEqual(Buffer.from(admin.password_hash), Buffer.from(hashedInput));
+
+    if (!passwordOk) {
+      res.status(401).json({ error: "invalid_credentials", message: "管理员账号或密码错误" });
+      return;
+    }
+
+    await prisma.adminUser.update({
+      where: { id: admin.id },
+      data: { last_login_at: new Date() }
+    });
+
+    const token = await issueAdminSession(admin.id);
+    res.json({
+      data: {
+        token,
+        admin: {
+          id: admin.id,
+          email: admin.email,
+          name: admin.name,
+          role: admin.role
+        }
+      }
+    });
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "管理员登录需要数据库连接。" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.get("/api/admin/auth/me", async (req, res, next) => {
+  try {
+    const admin = await findCurrentAdmin(req);
+    res.json({
+      data: admin
+        ? {
+            id: admin.id,
+            email: admin.email,
+            name: admin.name,
+            role: admin.role
+          }
+        : null
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+app.post("/api/admin/auth/logout", async (req, res) => {
+  const token = getTokenFromHeader(req);
+  if (token) adminSessions.delete(hashToken(token));
   res.json({ ok: true });
 });
 
@@ -1530,8 +1699,11 @@ app.get("/api/home/summary", async (req, res, next) => {
   }
 });
 
-app.get("/api/admin/dashboard", async (_req, res, next) => {
+app.get("/api/admin/dashboard", async (req, res, next) => {
   try {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+
     const since7Days = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
     const [
       totalUsers,

@@ -23,11 +23,33 @@
         <a class="active" href="./admin.html">运营看板</a>
       </nav>
       <div class="header-actions">
+        <button class="home-button admin-logout hidden" id="adminLogout" type="button">退出后台</button>
         <a class="home-button" href="./index.html#home">返回首页</a>
       </div>
     </header>
 
     <main class="page-shell admin-page">
+      <section class="admin-login-card" id="adminLoginCard" aria-labelledby="admin-login-title">
+        <div>
+          <p>管理员登录</p>
+          <h1 id="admin-login-title">进入运营后台</h1>
+          <span>本地默认账号可通过环境变量 `ADMIN_EMAIL` 和 `ADMIN_PASSWORD` 修改。</span>
+        </div>
+        <form id="adminLoginForm">
+          <label>
+            <span>管理员邮箱</span>
+            <input name="email" type="email" autocomplete="username" value="admin@aistar.local" required />
+          </label>
+          <label>
+            <span>密码</span>
+            <input name="password" type="password" autocomplete="current-password" placeholder="默认 admin123456" required />
+          </label>
+          <button type="submit">登录后台</button>
+          <p class="admin-login-message" id="adminLoginMessage">登录后才能查看运营数据。</p>
+        </form>
+      </section>
+
+      <section class="admin-dashboard hidden" id="adminDashboard">
       <section class="admin-hero" aria-labelledby="admin-title">
         <div>
           <p>运营后台</p>
@@ -78,6 +100,7 @@
           </div>
           <div class="admin-list" id="reviewQueue"></div>
         </article>
+      </section>
       </section>
     </main>
 

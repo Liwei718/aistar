@@ -22,6 +22,7 @@
 - 学习活动闭环第一版：首页继续学习区可读取最近学习、继续学习和收藏；内容推荐卡支持收藏和点击行为记录。
 - 首页个性化推荐第一版：推荐卡按年级、兴趣、收藏、点击行为和新鲜度做轻量排序，并返回推荐理由。
 - 运营看板第一版：新增只读运营后台页面和指标接口，聚合用户、内容、学习、游戏、收藏、点击和审核队列数据。
+- 管理员登录第一版：运营看板已接入管理员登录保护，未登录不能读取后台指标。
 
 ## 本地启动
 
@@ -86,6 +87,9 @@ http://localhost:3001
 | POST | `/api/contents/:id/favorite` | 收藏内容 |
 | DELETE | `/api/contents/:id/favorite` | 取消收藏内容 |
 | POST | `/api/contents/:id/actions` | 记录内容点击、浏览、开始学习等行为 |
+| POST | `/api/admin/auth/login` | 管理员登录，默认本地账号可通过环境变量修改 |
+| GET | `/api/admin/auth/me` | 当前管理员信息 |
+| POST | `/api/admin/auth/logout` | 管理员退出 |
 | GET | `/api/admin/dashboard` | 运营后台首页看板数据 |
 | GET | `/api/frontier/summary` | 今日前沿首页摘要 |
 | GET | `/api/frontier/items` | 今日前沿完整列表，支持 `category`、`grade`、分页 |
@@ -182,9 +186,11 @@ AI 学习动态化：
 
 运营看板：
 
+- 新增 `/api/admin/auth/login`、`/api/admin/auth/me`、`/api/admin/auth/logout`，运营后台需要管理员登录后访问。
+- 默认本地管理员账号为 `admin@aistar.local`，默认密码为 `admin123456`；可通过 `ADMIN_EMAIL`、`ADMIN_PASSWORD`、`ADMIN_NAME`、`ADMIN_TOKEN_TTL_HOURS` 修改。
 - 新增 `/api/admin/dashboard`，聚合活跃用户、7 日新增、发布内容、知识点、学习完成、游戏完成、收藏、推荐点击、待审核和 AI 草稿等核心指标。
 - 新增 `admin.html` 和 `admin.js`，展示核心指标、内容结构、热门内容、最近学习行为、小游戏成绩和待审核队列。
-- 第一版为只读本地运营页，后续再接管理员登录、内容编辑、审核发布和自动抓取任务控制。
+- 当前仍是只读本地运营页，后续再接内容编辑、审核发布和自动抓取任务控制。
 
 本地数据库说明：
 

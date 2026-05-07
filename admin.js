@@ -1,4 +1,6 @@
 const ADMIN_API_BASE_URL = "http://localhost:3001";
+const ADMIN_TOKEN_KEY = "aistar_admin_token";
+const ADMIN_USER_KEY = "aistar_admin_user";
 
 const adminStatus = document.querySelector("#adminStatus");
 const adminMetrics = document.querySelector("#adminMetrics");
@@ -7,6 +9,35 @@ const topContents = document.querySelector("#topContents");
 const recentActions = document.querySelector("#recentActions");
 const recentGames = document.querySelector("#recentGames");
 const reviewQueue = document.querySelector("#reviewQueue");
+const adminLoginCard = document.querySelector("#adminLoginCard");
+const adminDashboard = document.querySelector("#adminDashboard");
+const adminLoginForm = document.querySelector("#adminLoginForm");
+const adminLoginMessage = document.querySelector("#adminLoginMessage");
+const adminLogout = document.querySelector("#adminLogout");
+
+function adminAuthHeaders(extra = {}) {
+  const token = localStorage.getItem(ADMIN_TOKEN_KEY);
+  return token ? { ...extra, Authorization: `Bearer ${token}` } : extra;
+}
+
+function setAdminLoginMessage(message, type = "") {
+  if (!adminLoginMessage) return;
+  adminLoginMessage.className = `admin-login-message ${type}`;
+  adminLoginMessage.textContent = message;
+}
+
+function showAdminLogin() {
+  adminLoginCard?.classList.remove("hidden");
+  adminDashboard?.classList.add("hidden");
+  adminLogout?.classList.add("hidden");
+}
+
+function showAdminDashboard(admin) {
+  adminLoginCard?.classList.add("hidden");
+  adminDashboard?.classList.remove("hidden");
+  adminLogout?.classList.remove("hidden");
+  if (adminStatus) adminStatus.textContent = admin?.name ? `${admin.name} 已登录` : "管理员已登录";
+}
 
 function escapeAdminHtml(value) {
   return String(value ?? "")
@@ -131,11 +162,22 @@ function renderDashboard(data) {
 
 async function loadAdminDashboard() {
   try {
-    const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/dashboard`);
+    const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/dashboard`, {
+      headers: adminAuthHeaders()
+    });
+    if (response.status === 401) {
+      localStorage.removeItem(ADMIN_TOKEN_KEY);
+      localStorage.removeItem(ADMIN_USER_KEY);
+      showAdminLogin();
+      return;
+    }
     if (!response.ok) throw new Error("dashboard_unavailable");
     const payload = await response.json();
     renderDashboard(payload.data || {});
-    if (adminStatus) adminStatus.textContent = payload.mode === "demo" ? "Demo 数据" : "后端已连接";
+    if (adminStatus) {
+      const admin = JSON.parse(localStorage.getItem(ADMIN_USER_KEY) || "null");
+      adminStatus.textContent = payload.mode === "demo" ? "Demo 数据" : `${admin?.name || "管理员"} 已登录`;
+    }
   } catch (error) {
     console.warn("Admin dashboard failed.", error);
     if (adminStatus) adminStatus.textContent = "后端未连接";
@@ -150,4 +192,70 @@ async function loadAdminDashboard() {
   }
 }
 
-loadAdminDashboard();
+async function refreshAdmin() {
+  if (!localStorage.getItem(ADMIN_TOKEN_KEY)) {
+    showAdminLogin();
+    return;
+  }
+
+  try {
+    const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/auth/me`, {
+      headers: adminAuthHeaders()
+    });
+    const payload = await response.json();
+    if (!payload.data) {
+      showAdminLogin();
+      return;
+    }
+
+    localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(payload.data));
+    showAdminDashboard(payload.data);
+    await loadAdminDashboard();
+  } catch (error) {
+    console.warn("Admin auth refresh failed.", error);
+    showAdminLogin();
+  }
+}
+
+adminLoginForm?.addEventListener("submit", async (event) => {
+  event.preventDefault();
+  const formData = new FormData(adminLoginForm);
+  const payload = {
+    email: String(formData.get("email") || "").trim(),
+    password: String(formData.get("password") || "")
+  };
+
+  try {
+    setAdminLoginMessage("正在登录后台...");
+    const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "登录失败");
+
+    localStorage.setItem(ADMIN_TOKEN_KEY, result.data.token);
+    localStorage.setItem(ADMIN_USER_KEY, JSON.stringify(result.data.admin));
+    showAdminDashboard(result.data.admin);
+    setAdminLoginMessage("登录成功", "success");
+    await loadAdminDashboard();
+  } catch (error) {
+    setAdminLoginMessage(error.message || "登录失败", "error");
+  }
+});
+
+adminLogout?.addEventListener("click", async () => {
+  try {
+    await fetch(`${ADMIN_API_BASE_URL}/api/admin/auth/logout`, {
+      method: "POST",
+      headers: adminAuthHeaders()
+    });
+  } finally {
+    localStorage.removeItem(ADMIN_TOKEN_KEY);
+    localStorage.removeItem(ADMIN_USER_KEY);
+    showAdminLogin();
+  }
+});
+
+refreshAdmin();
