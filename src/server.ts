@@ -1229,6 +1229,7 @@ app.get("/api", (_req, res) => {
       { method: "GET", path: "/api/admin/dashboard", description: "运营后台首页看板数据" },
       { method: "GET", path: "/api/admin/contents", description: "后台内容列表" },
       { method: "PATCH", path: "/api/admin/contents/:id", description: "后台更新内容标题、摘要和状态" },
+      { method: "POST", path: "/api/admin/review-tasks/:id/decision", description: "后台审核通过或退回任务" },
       { method: "GET", path: "/api/frontier/summary", description: "今日前沿首页摘要" },
       { method: "GET", path: "/api/frontier/items", description: "今日前沿完整列表" },
       { method: "GET", path: "/api/frontier/today-news", description: "今日前沿当天新闻" },
@@ -1947,6 +1948,75 @@ app.patch("/api/admin/contents/:id", async (req, res, next) => {
   } catch (error) {
     if (isDatabaseConnectionError(error)) {
       res.status(503).json({ error: "database_unavailable", message: "更新后台内容需要数据库连接。" });
+      return;
+    }
+
+    next(error);
+  }
+});
+
+app.post("/api/admin/review-tasks/:id/decision", async (req, res, next) => {
+  try {
+    const admin = await requireAdmin(req, res);
+    if (!admin) return;
+
+    const params = z.object({ id: z.string().uuid() }).parse(req.params);
+    const body = z
+      .object({
+        decision: z.enum(["approve", "return", "reject"]),
+        comment: z.string().max(1000).optional()
+      })
+      .parse(req.body);
+
+    const task = await prisma.reviewTask.findUnique({
+      where: { id: params.id }
+    });
+
+    if (!task) {
+      res.status(404).json({ error: "not_found", message: "未找到审核任务" });
+      return;
+    }
+
+    if (task.status !== "pending") {
+      res.status(409).json({ error: "already_reviewed", message: "该任务已经处理过" });
+      return;
+    }
+
+    const nextStatus = body.decision === "approve" ? "approved" : body.decision === "reject" ? "rejected" : "returned";
+    const now = new Date();
+
+    const [updatedTask] = await prisma.$transaction(async (tx) => {
+      if (task.target_type === "content") {
+        await tx.content.updateMany({
+          where: {
+            id: task.target_id,
+            deleted_at: null
+          },
+          data: {
+            status: body.decision === "approve" ? "published" : body.decision === "reject" ? "rejected" : "draft",
+            published_at: body.decision === "approve" ? now : undefined,
+            editor_id: admin.id
+          }
+        });
+      }
+
+      const reviewTask = await tx.reviewTask.update({
+        where: { id: task.id },
+        data: {
+          status: nextStatus as never,
+          reviewed_by_id: admin.id,
+          reviewed_at: now,
+          review_comment: body.comment || null
+        }
+      });
+
+      return [reviewTask];
+    });
+
+    res.json(jsonSafe({ data: updatedTask }));
+  } catch (error) {
+    if (isDatabaseConnectionError(error)) {
+      res.status(503).json({ error: "database_unavailable", message: "处理审核任务需要数据库连接。" });
       return;
     }
 

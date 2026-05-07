@@ -172,12 +172,16 @@ function renderDashboard(data) {
   `);
 
   renderList(reviewQueue, data.review_queue || [], "暂无待审核任务", (item) => `
-    <div class="admin-list-row">
+    <div class="admin-list-row admin-review-row" data-review-id="${escapeAdminHtml(item.id)}">
       <div>
         <b>${escapeAdminHtml(item.title)}</b>
         <small>${escapeAdminHtml(item.target_type)} · ${formatAdminDate(item.submitted_at)}</small>
       </div>
       <span>P${formatNumber(item.priority)}</span>
+      <div class="admin-review-actions">
+        <button type="button" data-review-decision="approve">通过</button>
+        <button type="button" data-review-decision="return">退回</button>
+      </div>
     </div>
   `);
 }
@@ -264,6 +268,27 @@ async function updateAdminContent(form) {
     await Promise.all([loadAdminContents(), loadAdminDashboard()]);
   } catch (error) {
     setAdminContentMessage(error.message || "保存失败", "error");
+  }
+}
+
+async function decideReviewTask(reviewId, decision) {
+  if (!reviewId || !decision) return;
+
+  try {
+    if (adminStatus) adminStatus.textContent = "正在处理审核任务";
+    const response = await fetch(`${ADMIN_API_BASE_URL}/api/admin/review-tasks/${reviewId}/decision`, {
+      method: "POST",
+      headers: adminAuthHeaders({ "Content-Type": "application/json" }),
+      body: JSON.stringify({
+        decision,
+        comment: decision === "approve" ? "后台审核通过" : "后台退回修改"
+      })
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.message || "审核处理失败");
+    await Promise.all([loadAdminDashboard(), loadAdminContents()]);
+  } catch (error) {
+    if (adminStatus) adminStatus.textContent = error.message || "审核处理失败";
   }
 }
 
@@ -368,6 +393,13 @@ adminLogout?.addEventListener("click", async () => {
 adminContentList?.addEventListener("submit", (event) => {
   event.preventDefault();
   updateAdminContent(event.target);
+});
+
+reviewQueue?.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-review-decision]");
+  if (!button) return;
+  const row = button.closest("[data-review-id]");
+  decideReviewTask(row?.dataset.reviewId, button.dataset.reviewDecision);
 });
 
 contentStatusFilter?.addEventListener("change", loadAdminContents);

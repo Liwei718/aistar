@@ -1791,6 +1791,32 @@ input[type="range"] {
   font-weight: 900;
 }
 
+.admin-review-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+}
+
+.admin-review-actions {
+  display: flex;
+  gap: 7px;
+}
+
+.admin-review-actions button {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid rgba(36, 87, 255, 0.2);
+  border-radius: 8px;
+  background: #fff;
+  color: #2457ff;
+  font-weight: 900;
+}
+
+.admin-review-actions button:first-child {
+  border-color: #2457ff;
+  background: #2457ff;
+  color: #fff;
+}
+
 .admin-content-head {
   align-items: flex-end;
 }
@@ -5170,6 +5196,10 @@ input[type="range"] {
   }
 
   .admin-content-row {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-review-row {
     grid-template-columns: 1fr;
   }
 
